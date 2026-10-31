@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7b1fa2">
+<title>Navrang Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 120px; }
+  header.hero { text-align: center; padding: 22px 16px 8px; position: relative; overflow: hidden; }
+  header.hero .mandala { position: absolute; opacity: .25; }
+  header.hero .m1 { left: -40px; top: -30px; }
+  header.hero .m2 { right: -40px; top: 10px; animation-direction: reverse; }
+  header.hero h1 { margin: 6px 0 0; font-size: 2.3rem; line-height: 1.1;
+    background: var(--rainbow); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shimmer 8s linear infinite; }
+  header.hero p { margin: 4px 0 0; }
+  .hello { margin: 10px 0 0; font-weight: 600; color: var(--purple); }
+
+  /* Name screen */
+  #nameScreen { padding: 24px 20px; margin-top: 18px; text-align: center; }
+  #nameScreen h2 { margin: 0 0 6px; font-size: 1.6rem; color: var(--purple); }
+  #nameScreen form { display: grid; gap: 12px; margin-top: 16px; }
+  .dandiya { font-size: 2.4rem; }
+
+  /* Category tabs */
+  .tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; background: linear-gradient(var(--bg) 80%, transparent); scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; border: 0; padding: 8px 16px; border-radius: 999px; font: inherit; font-weight: 600; color: #fff; cursor: pointer; }
+  section.cat h2 { margin: 18px 4px 10px; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+  section.cat h2::after { content: ""; flex: 1; height: 3px; border-radius: 3px; background: currentColor; opacity: .35; }
+
+  .item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; margin-bottom: 10px; border-left: 6px solid var(--c); }
+  .item .emo { width: 48px; height: 48px; flex: none; display: grid; place-items: center; font-size: 1.6rem; border-radius: 14px; background: color-mix(in srgb, var(--c) 15%, #fff); }
+  .item .info { flex: 1; min-width: 0; }
+  .item .nm { font-weight: 600; }
+  .item .pr { color: var(--muted); font-size: .95rem; }
+  .veg { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--green); border-radius: 2px; position: relative; margin-right: 6px; vertical-align: -1px; }
+  .veg::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; background: var(--green); }
+
+  .qty { display: flex; align-items: center; gap: 4px; }
+  .qty button { width: 34px; height: 34px; border-radius: 50%; border: 0; font-size: 1.2rem; font-weight: 700; cursor: pointer; color: #fff; background: var(--c); }
+  .qty span { min-width: 22px; text-align: center; font-weight: 700; }
+  .add { border: 2px solid var(--c); color: var(--c); background: #fff; font: inherit; font-weight: 700; padding: 6px 18px; border-radius: 999px; cursor: pointer; }
+
+  /* Cart bar + sheet */
+  .cartbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .cartbar .btn { width: 100%; max-width: 528px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; font-size: 1.05rem; }
+  .sheet-bg { position: fixed; inset: 0; background: rgba(43, 10, 51, .45); z-index: 20; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 88vh; overflow: auto; border-radius: 24px 24px 0 0; padding: 0 18px calc(18px + env(safe-area-inset-bottom)); max-width: 600px; margin: 0 auto; }
+  .sheet h2 { margin: 16px 0 4px; color: var(--purple); }
+  .line { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px dashed #ead7ef; }
+  .line .nm { flex: 1; }
+  .line .amt { font-weight: 700; min-width: 60px; text-align: right; }
+  .total { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: 700; padding: 14px 0; }
+  .sheet textarea { margin: 6px 0 14px; min-height: 60px; resize: vertical; }
+  .sheet .actions { display: grid; gap: 10px; }
+
+  /* Confirmation */
+  #done { text-align: center; padding: 26px 18px; margin-top: 18px; }
+  #done .no { font-family: "Yatra One", serif; font-size: 3.4rem; color: var(--pink); line-height: 1; margin: 8px 0; }
+  .status { display: inline-block; padding: 6px 14px; border-radius: 999px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: .05em; font-size: .85rem; }
+  .st-new { background: var(--orange); } .st-preparing { background: var(--royal); } .st-ready { background: var(--green); } .st-done { background: var(--grey); } .st-cancelled { background: var(--red); }
+  #done table { width: 100%; border-collapse: collapse; margin: 16px 0 8px; text-align: left; }
+  #done td { padding: 6px 0; border-bottom: 1px dashed #ead7ef; }
+  #done td:last-child { text-align: right; font-weight: 600; }
+  .err { color: var(--red); font-weight: 600; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<div class="toran"></div>
+<header class="hero">
+  <div class="mandala m1"></div><div class="mandala m2"></div>
+  <h1 id="stallName">Navrang</h1>
+  <p class="muted" id="tagline"></p>
+  <p class="hello hidden" id="hello"></p>
+</header>
+
+<main class="wrap">
+  <!-- Step 1: name -->
+  <div id="nameScreen" class="card hidden">
+    <div class="dandiya">🪔 💃 🪔</div>
+    <h2>Kem cho! Welcome</h2>
+    <p class="muted">Enter your name so we can call you when your order is ready.</p>
+    <form id="nameForm">
+      <input id="nameInput" placeholder="Your name" maxlength="40" autocomplete="given-name" required>
+      <button class="btn" type="submit">See the menu →</button>
+    </form>
+  </div>
+
+  <!-- Step 2: menu -->
+  <div id="menuScreen" class="hidden">
+    <nav class="tabs" id="tabs"></nav>
+    <div id="menu"></div>
+  </div>
+
+  <!-- Step 3: confirmation -->
+  <div id="done" class="card hidden"></div>
+</main>
+
+<div class="cartbar hidden" id="cartbar">
+  <button class="btn" id="openCart"><span id="cartCount">0 items</span><span>View cart · <b id="cartTotal">₹0</b></span></button>
+</div>
+
+<div class="sheet-bg hidden" id="sheetBg"></div>
+<div class="sheet card hidden" id="sheet">
+  <h2 class="display">Your cart</h2>
+  <p class="muted" id="cartFor"></p>
+  <div id="lines"></div>
+  <div class="total"><span>Total</span><span id="sheetTotal">₹0</span></div>
+  <textarea id="note" placeholder="Any request? (less spicy, no onion…)" maxlength="140"></textarea>
+  <p class="err" id="err"></p>
+  <div class="actions">
+    <button class="btn" id="placeOrder">Place order</button>
+    <button class="btn ghost" id="closeCart">Add more items</button>
+  </div>
+</div>
+
+<script>
+const NINE = ['--orange','--red','--royal','--yellow','--green','--purple','--peacock','--pink','--grey'];
+const $ = (id) => document.getElementById(id);
+let menu, cur = '₹';
+const cart = new Map(); // id -> qty
+const items = new Map(); // id -> item
+let name = localStorage.getItem('navrang_name') || '';
+
+const money = (n) => cur + n.toLocaleString('en-IN');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function show(screen) {
+  for (const id of ['nameScreen', 'menuScreen', 'done']) $(id).classList.toggle('hidden', id !== screen);
+  $('hello').classList.toggle('hidden', !name || screen === 'nameScreen');
+  $('hello').textContent = `Hi ${name}! 🎉`;
+  updateCart();
+}
+
+function renderMenu() {
+  $('tabs').innerHTML = menu.categories.map((c, i) =>
+    `<button class="tab" style="background:var(${NINE[i % 9]})" data-i="${i}">${esc(c.name)}</button>`).join('');
+  $('menu').innerHTML = menu.categories.map((c, i) => `
+    <section class="cat" id="cat${i}" style="--c:var(${NINE[i % 9]})">
+      <h2 style="color:var(${NINE[i % 9]})">${esc(c.name)}</h2>
+      ${c.items.map((it) => `
+        <div class="item card">
+          <div class="emo">${esc(it.emoji || '🍽️')}</div>
+          <div class="info">
+            <div class="nm">${it.veg ? '<span class="veg"></span>' : ''}${esc(it.name)}</div>
+            <div class="pr">${money(it.price)}</div>
+          </div>
+          <div id="ctl-${it.id}"></div>
+        </div>`).join('')}
+    </section>`).join('');
+  $('tabs').onclick = (e) => { const i = e.target.dataset.i; if (i) $('cat' + i).scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  for (const id of items.keys()) renderCtl(id);
+}
+
+function renderCtl(id) {
+  const el = $('ctl-' + id); if (!el) return;
+  const q = cart.get(id) || 0;
+  el.innerHTML = q
+    ? `<div class="qty"><button data-a="-" data-id="${id}">−</button><span>${q}</span><button data-a="+" data-id="${id}">+</button></div>`
+    : `<button class="add" data-a="+" data-id="${id}">ADD</button>`;
+}
+
+function change(id, d) {
+  const q = Math.max(0, Math.min(50, (cart.get(id) || 0) + d));
+  q ? cart.set(id, q) : cart.delete(id);
+  renderCtl(id); updateCart(); renderLines();
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  change(b.dataset.id, b.dataset.a === '+' ? 1 : -1);
+});
+
+function totals() {
+  let count = 0, total = 0;
+  for (const [id, q] of cart) { count += q; total += items.get(id).price * q; }
+  return { count, total };
+}
+function updateCart() {
+  const { count, total } = totals();
+  const onMenu = !$('menuScreen').classList.contains('hidden');
+  $('cartbar').classList.toggle('hidden', !onMenu || !count);
+  $('cartCount').textContent = `${count} item${count === 1 ? '' : 's'}`;
+  $('cartTotal').textContent = money(total);
+  $('sheetTotal').textContent = money(total);
+}
+function renderLines() {
+  $('cartFor').textContent = `Order for ${name}`;
+  $('lines').innerHTML = [...cart].map(([id, q]) => {
+    const it = items.get(id);
+    return `<div class="line" style="--c:var(--purple)"><span class="nm">${esc(it.name)}<br><small class="muted">${money(it.price)} each</small></span>
+      <div class="qty"><button data-a="-" data-id="${id}">−</button><span>${q}</span><button data-a="+" data-id="${id}">+</button></div>
+      <span class="amt">${money(it.price * q)}</span></div>`;
+  }).join('') || '<p class="muted">Your cart is empty.</p>';
+  $('placeOrder').disabled = !cart.size;
+  if (!cart.size) closeSheet();
+}
+function openSheet() { renderLines(); $('err').textContent = ''; $('sheet').classList.remove('hidden'); $('sheetBg').classList.remove('hidden'); }
+function closeSheet() { $('sheet').classList.add('hidden'); $('sheetBg').classList.add('hidden'); }
+$('openCart').onclick = openSheet;
+$('closeCart').onclick = closeSheet;
+$('sheetBg').onclick = closeSheet;
+
+$('nameForm').onsubmit = (e) => {
+  e.preventDefault();
+  name = $('nameInput').value.trim();
+  if (!name) return;
+  localStorage.setItem('navrang_name', name);
+  show('menuScreen');
+};
+
+$('placeOrder').onclick = async () => {
+  $('placeOrder').disabled = true; $('err').textContent = '';
+  try {
+    const r = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, note: $('note').value, items: [...cart].map(([id, qty]) => ({ id, qty })) }) });
+    const o = await r.json();
+    if (!r.ok) throw new Error(o.error || 'Could not place order');
+    localStorage.setItem('navrang_last_order', o.id);
+    cart.clear(); $('note').value = ''; closeSheet();
+    for (const id of items.keys()) renderCtl(id);
+    showOrder(o);
+  } catch (err) {
+    $('err').textContent = err.message || 'Network problem, please try again';
+  } finally { $('placeOrder').disabled = !cart.size; }
+};
+
+let poll;
+const STATUS_TEXT = { new: 'Order received', preparing: 'Being prepared', ready: 'Ready! Please collect', done: 'Collected', cancelled: 'Cancelled' };
+function showOrder(o) {
+  show('done');
+  $('done').innerHTML = `
+    <div class="dandiya">🎉</div>
+    <h2 style="margin:0;color:var(--purple)">Thank you, ${esc(o.name)}!</h2>
+    <p class="muted" style="margin:6px 0 0">Your order number</p>
+    <div class="no">#${o.no}</div>
+    <span class="status st-${o.status}">${STATUS_TEXT[o.status]}</span>
+    <table>${o.items.map((i) => `<tr><td>${esc(i.name)} × ${i.qty}</td><td>${money(i.price * i.qty)}</td></tr>`).join('')}
+      <tr><td><b>Total</b></td><td><b>${money(o.total)}</b></td></tr></table>
+    ${o.note ? `<p class="muted">Note: ${esc(o.note)}</p>` : ''}
+    <p class="muted">Show this screen at the counter. This page updates automatically.</p>
+    <button class="btn" id="again">Order something else</button>`;
+  $('again').onclick = () => { clearInterval(poll); localStorage.removeItem('navrang_last_order'); show('menuScreen'); };
+  clearInterval(poll);
+  if (o.status !== 'done' && o.status !== 'cancelled') {
+    poll = setInterval(async () => {
+      const r = await fetch('/api/orders/' + o.id).catch(() => null);
+      if (r && r.ok) { const n = await r.json(); if (n.status !== o.status) { if (n.status === 'ready' && navigator.vibrate) navigator.vibrate([200, 100, 200]); showOrder(n); } }
+    }, 5000);
+  }
+}
+
+(async function init() {
+  menu = await (await fetch('/api/menu')).json();
+  cur = menu.currency || '₹';
+  $('stallName').textContent = menu.stallName;
+  $('tagline').textContent = menu.tagline || '';
+  document.title = menu.stallName + ' · Menu';
+  for (const c of menu.categories) for (const it of c.items) items.set(it.id, it);
+  renderMenu();
+  const last = localStorage.getItem('navrang_last_order');
+  if (name && last) {
+    const r = await fetch('/api/orders/' + last).catch(() => null);
+    if (r && r.ok) { const o = await r.json(); if (o.status !== 'done' && o.status !== 'cancelled') return showOrder(o); }
+  }
+  if (name) { $('nameInput').value = name; show('menuScreen'); } else show('nameScreen');
+})();
+</script>
+</body>
+</html>

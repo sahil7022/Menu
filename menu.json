@@ -1,0 +1,39 @@
+{
+  "stallName": "Navrang Food Stall",
+  "tagline": "Nine colours · Nine nights · Endless flavours",
+  "currency": "₹",
+  "categories": [
+    {
+      "name": "Snacks",
+      "items": [
+        { "id": "s1", "name": "Khaman Dhokla", "price": 40, "emoji": "🟨", "veg": true },
+        { "id": "s2", "name": "Fafda Jalebi", "price": 60, "emoji": "🥨", "veg": true },
+        { "id": "s3", "name": "Samosa (2 pcs)", "price": 30, "emoji": "🥟", "veg": true },
+        { "id": "s4", "name": "Vada Pav", "price": 25, "emoji": "🍔", "veg": true }
+      ]
+    },
+    {
+      "name": "Chaat",
+      "items": [
+        { "id": "c1", "name": "Pani Puri", "price": 30, "emoji": "🫧", "veg": true },
+        { "id": "c2", "name": "Sev Puri", "price": 40, "emoji": "🥗", "veg": true },
+        { "id": "c3", "name": "Dabeli", "price": 35, "emoji": "🌶️", "veg": true }
+      ]
+    },
+    {
+      "name": "Sweets",
+      "items": [
+        { "id": "w1", "name": "Gulab Jamun (2 pcs)", "price": 40, "emoji": "🍯", "veg": true },
+        { "id": "w2", "name": "Malpua", "price": 50, "emoji": "🥞", "veg": true }
+      ]
+    },
+    {
+      "name": "Drinks",
+      "items": [
+        { "id": "d1", "name": "Masala Chaas", "price": 20, "emoji": "🥛", "veg": true },
+        { "id": "d2", "name": "Masala Chai", "price": 15, "emoji": "☕", "veg": true },
+        { "id": "d3", "name": "Lemon Soda", "price": 30, "emoji": "🍋", "veg": true }
+      ]
+    }
+  ]
+}

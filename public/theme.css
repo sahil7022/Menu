@@ -1,0 +1,83 @@
+/* Navrang theme — the nine colours of Navratri.
+   Tweak these variables to match your own banner/photo. */
+:root {
+  --orange: #ff7a00;
+  --red: #e0123b;
+  --royal: #1d3fbf;
+  --yellow: #ffc400;
+  --green: #11a84a;
+  --grey: #8a8f98;
+  --purple: #7b1fa2;
+  --peacock: #00a3a3;
+  --pink: #ff2e93;
+
+  --bg: #fff8ef;
+  --ink: #2b0a33;
+  --card: #ffffff;
+  --muted: #7a6680;
+  --brand: var(--purple);
+  --accent: var(--pink);
+  --rainbow: linear-gradient(90deg, var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange));
+  --radius: 18px;
+  --shadow: 0 6px 22px rgba(59, 10, 69, .12);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 122, 0, .18), transparent 40%),
+    radial-gradient(circle at 100% 30%, rgba(255, 46, 147, .14), transparent 40%),
+    radial-gradient(circle at 0% 90%, rgba(0, 163, 163, .14), transparent 40%),
+    var(--bg);
+  min-height: 100vh;
+}
+h1, h2, h3, .display { font-family: "Yatra One", "Poppins", serif; font-weight: 400; }
+
+/* Decorative toran (festive bunting) strip */
+.toran {
+  height: 14px;
+  background: var(--rainbow);
+  background-size: 200% 100%;
+  animation: shimmer 8s linear infinite;
+  -webkit-mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
+          mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
+}
+.band { height: 6px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 8s linear infinite; }
+@keyframes shimmer { to { background-position: 200% 0; } }
+
+/* Mandala / rangoli decoration */
+.mandala {
+  width: 110px; height: 110px; border-radius: 50%;
+  background:
+    repeating-conic-gradient(var(--orange) 0 15deg, var(--pink) 15deg 30deg, var(--purple) 30deg 45deg, var(--peacock) 45deg 60deg, var(--yellow) 60deg 75deg, var(--green) 75deg 90deg);
+  -webkit-mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
+          mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
+  animation: spin 40s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn {
+  appearance: none; border: 0; cursor: pointer;
+  font: inherit; font-weight: 600;
+  padding: 14px 20px; border-radius: 999px;
+  color: #fff; background: linear-gradient(135deg, var(--pink), var(--purple));
+  box-shadow: 0 6px 16px rgba(123, 31, 162, .35);
+  transition: transform .1s ease, filter .2s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { filter: grayscale(1) opacity(.5); cursor: not-allowed; }
+.btn.ghost { background: #fff; color: var(--purple); box-shadow: inset 0 0 0 2px var(--purple); }
+.btn.small { padding: 8px 14px; font-size: .9rem; }
+
+input, textarea {
+  font: inherit; width: 100%; padding: 14px 16px; border-radius: 14px;
+  border: 2px solid #ead7ef; background: #fff; color: var(--ink); outline: none;
+}
+input:focus, textarea:focus { border-color: var(--pink); }
+
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navrang · Scan to order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  body { display: grid; place-items: center; padding: 24px; }
+  .poster { width: min(440px, 100%); text-align: center; overflow: hidden; }
+  .poster .inner { padding: 22px 26px 26px; }
+  h1 { margin: 0; font-size: 2.6rem; background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .frame { margin: 18px auto; padding: 14px; border-radius: 22px; background: var(--rainbow); width: fit-content; }
+  .frame img { display: block; width: 260px; height: 260px; background: #fff; border-radius: 12px; padding: 10px; }
+  .scan { font-size: 1.4rem; color: var(--purple); margin: 0; }
+  .url { word-break: break-all; font-size: .85rem; }
+  .print { margin-top: 18px; }
+  @media print { .print { display: none; } body { background: #fff; } .card { box-shadow: none; border: 2px solid #eee; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="poster card">
+  <div class="toran"></div>
+  <div class="inner">
+    <div style="font-size:2rem">🪔 💃 🕺 🪔</div>
+    <h1 id="name">Navrang</h1>
+    <p class="muted" id="tag"></p>
+    <div class="frame"><img src="/api/qr.svg" alt="QR code to open the menu"></div>
+    <p class="scan display">Scan · Order · Enjoy!</p>
+    <p class="muted url" id="url"></p>
+    <button class="btn print" onclick="print()">🖨️ Print this poster</button>
+  </div>
+  <div class="band"></div>
+</div>
+<script>
+fetch('/api/menu').then((r) => r.json()).then((m) => { document.getElementById('name').textContent = m.stallName; document.getElementById('tag').textContent = m.tagline || ''; });
+fetch('/api/site-url').then((r) => r.json()).then((d) => { document.getElementById('url').textContent = d.url; });
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "navrang-stall-menu",
+  "version": "1.0.0",
+  "description": "Navrang-themed QR menu & ordering for a food stall",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
