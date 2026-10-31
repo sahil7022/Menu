@@ -16,6 +16,26 @@ npm start          # http://localhost:3000
 ```
 While editing the design, run `npm start` and `npm run dev` together and open http://localhost:5173 (live reload).
 
+## Hosting
+
+### Vercel (recommended)
+Configured by `vercel.json`: the React app is served as static files and `/api/*` runs as a serverless
+function (`api/index.js`). Orders are stored in **Supabase**, because Vercel can't keep files.
+Set these environment variables in Vercel:
+- `SUPABASE_URL`, `SUPABASE_KEY` (the project's publishable key — safe to be public)
+- `ADMIN_PIN` — must match the PIN stored in the database (see below)
+- `PUBLIC_URL` — e.g. `https://navrang-menu.vercel.app` (used in the QR code)
+
+The database (`supabase/schema.sql`) does its own checks: prices come from its menu table
+(synced from `menu.json` automatically after each deploy), and staff actions need the PIN.
+20 wrong PINs within 10 minutes locks staff actions for 10 minutes.
+To change the PIN, update `ADMIN_PIN` in Vercel **and** run this in the Supabase SQL editor:
+`update navrang.config set v = encode(extensions.digest('NEWPIN','sha256'),'hex') where k = 'pin_sha256';`
+
+### Render / your own computer
+`npm start` runs `server.js`. Without `SUPABASE_URL` orders go to `data/orders.json`
+(fine for testing; lost on Render's free plan when it sleeps). Set the Supabase variables to make them permanent.
+
 ## Settings (environment variables)
 - `ADMIN_PIN` – staff PIN for `/admin` (default `1234` — **change it**)
 - `PUBLIC_URL` – the public address the QR code points to, e.g. `https://navrang-menu.onrender.com` (if unset, the address you opened `/qr` from is used)
