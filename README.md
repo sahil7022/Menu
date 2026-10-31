@@ -11,8 +11,10 @@ A Navratri / Navrang-themed (nine colours) ordering site for a food stall.
 ## Run locally
 ```bash
 npm install
+npm run build      # builds the React app into dist/
 npm start          # http://localhost:3000
 ```
+While editing the design, run `npm start` and `npm run dev` together and open http://localhost:5173 (live reload).
 
 ## Settings (environment variables)
 - `ADMIN_PIN` – staff PIN for `/admin` (default `1234` — **change it**)
@@ -24,18 +26,22 @@ Change `menu.json` and restart. Each item supports:
 `id`, `name`, `price`, `desc` (short description), `veg` (true/false), `popular` (shows a badge),
 and optional `image` (a URL or a file you put in `public/`, e.g. `"image": "/img/dhokla.jpg"`).
 
-## Animations
-Animations use [Motion](https://motion.dev) — the vanilla-JS edition of Framer Motion (same spring engine),
-served locally from `node_modules` at `/vendor/motion.js`. Helpers live in `public/fx.js`
-(springs, stagger, scroll-reveal, FLIP re-ordering, number count-ups, confetti).
-Everything switches off automatically for visitors with "reduce motion" enabled on their phone.
+## Tech & design
+- **React + Vite** frontend in `client/`, **Framer Motion** for every animation
+  (springs, `layout`/`layoutId` transitions, `AnimatePresence` exits, drag-to-close cart sheet,
+  SVG path drawing, scroll-triggered `whileInView` reveals). `MotionConfig reducedMotion="user"`
+  switches motion off for people who turn on "reduce motion" on their phone.
+- Design follows the **UI/UX Pro Max** guidance for *Restaurant/Food Service*: Vibrant & Block-based +
+  Motion-Driven style, warm appetizing palette (red/orange/gold) with the nine Navratri colours as accents,
+  Baloo 2 + Nunito fonts, Lucide SVG icons (no emoji icons), 44px+ touch targets, AA text contrast,
+  visible focus rings, labelled inputs with inline errors, transform/opacity-only animation.
 
 ## Change the colours
-All colours are CSS variables at the top of `public/theme.css`.
+All colours, fonts, spacing and radii are design tokens at the top of `client/src/theme.css`.
 
 ## Deploy (e.g. Render, free)
 1. New → Web Service → connect this repo.
-2. Build command `npm install`, start command `npm start`.
+2. Build command `npm install && npm run build`, start command `npm start`.
 3. Add env vars `ADMIN_PIN` and `PUBLIC_URL` (your Render URL).
 4. Open `https://<your-app>/qr`, print it, stick it on the stall.
 

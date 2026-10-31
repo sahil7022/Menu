@@ -1,0 +1,137 @@
+/* Navrang design system
+   Direction (from UI/UX Pro Max, "Restaurant/Food Service"): Vibrant & Block-based + Motion-Driven,
+   warm appetizing base (red / orange / gold) with the nine Navratri colours as category accents.
+   Rules applied: AA text contrast, >=44px touch targets, visible focus, SVG icons only,
+   semantic tokens, reduced-motion support, transform/opacity-only animation. */
+:root {
+  /* Nine colours: fill + readable ink on light surfaces */
+  --orange: #f97316; --orange-ink: #c2410c;
+  --red: #e11d48;    --red-ink: #be123c;
+  --royal: #2563eb;  --royal-ink: #1d4ed8;
+  --yellow: #f5b700; --yellow-ink: #92400e;
+  --green: #16a34a;  --green-ink: #15803d;
+  --purple: #9333ea; --purple-ink: #7e22ce;
+  --peacock: #0d9488;--peacock-ink: #0f766e;
+  --pink: #ec4899;   --pink-ink: #be185d;
+  --grey: #8a8f98;   --grey-ink: #4b5563;
+
+  /* Semantic tokens */
+  --bg: #fff7ed;
+  --surface: #ffffff;
+  --surface-2: #fff1e6;
+  --line: #f6e1cf;
+  --ink: #3b0d0d;           /* deep maroon */
+  --ink-2: #6b4040;         /* 7:1 on white */
+  --primary: #be123c;
+  --primary-2: #c2410c;
+  --gold: #a16207;
+  --success: var(--green-ink);
+  --danger: var(--red-ink);
+  --cta: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+  --rainbow: linear-gradient(90deg, var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange));
+
+  --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-full: 999px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  --shadow-sm: 0 1px 2px rgba(59, 13, 13, .06), 0 2px 8px rgba(59, 13, 13, .05);
+  --shadow-md: 0 6px 16px rgba(59, 13, 13, .10), 0 16px 40px rgba(59, 13, 13, .08);
+  --shadow-cta: 0 10px 24px -6px rgba(190, 18, 60, .5);
+
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --heading: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --brand: "Yatra One", "Baloo 2", serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+html { scroll-padding-top: 170px; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 1.5; color: var(--ink);
+  background:
+    radial-gradient(60rem 30rem at 0% -10%, rgba(249, 115, 22, .16), transparent 60%),
+    radial-gradient(50rem 30rem at 110% 10%, rgba(225, 29, 72, .12), transparent 60%),
+    radial-gradient(50rem 30rem at -10% 100%, rgba(245, 183, 0, .12), transparent 60%),
+    var(--bg);
+  background-attachment: fixed; min-height: 100dvh; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--heading); font-weight: 800; line-height: 1.15; margin: 0; }
+button { font: inherit; color: inherit; }
+svg { flex: none; }
+
+.brand { font-family: var(--brand); font-weight: 400; }
+.rainbow-text { background: var(--rainbow); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 10s linear infinite; }
+@keyframes shimmer { to { background-position: 200% 0; } }
+
+/* Festive bunting */
+.toran {
+  height: 14px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 10s linear infinite;
+  -webkit-mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
+          mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
+}
+.band { height: 5px; background: var(--rainbow); }
+
+/* Rangoli mandala */
+.mandala {
+  width: 120px; height: 120px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(var(--orange) 0 15deg, var(--red) 15deg 30deg, var(--purple) 30deg 45deg, var(--peacock) 45deg 60deg, var(--yellow) 60deg 75deg, var(--green) 75deg 90deg);
+  -webkit-mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
+          mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
+}
+
+/* Buttons */
+.btn {
+  appearance: none; border: 0; cursor: pointer; text-decoration: none; user-select: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 48px; padding: 12px 22px; border-radius: var(--r-full);
+  font-family: var(--heading); font-weight: 700; font-size: 1.05rem; letter-spacing: .01em;
+  color: #fff; background: var(--cta); box-shadow: var(--shadow-cta);
+}
+.btn:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btn.ghost { background: var(--surface); color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--line), var(--shadow-sm); }
+.btn.ghost:hover { box-shadow: inset 0 0 0 1.5px var(--primary), var(--shadow-sm); }
+.btn.danger { background: var(--surface); color: var(--danger); box-shadow: inset 0 0 0 1.5px #fbcfe8; }
+.btn.small { min-height: 44px; padding: 8px 16px; font-size: .95rem; }
+.btn.block { width: 100%; }
+.iconbtn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 0; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.linkbtn { background: none; border: 0; min-height: 44px; padding: 10px 4px; color: var(--primary); font-weight: 800; font-size: .9rem; cursor: pointer; }
+
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--orange) 75%, transparent); outline-offset: 2px; border-radius: 10px; }
+
+/* Fields */
+.field { position: relative; }
+.field > svg { position: absolute; left: 16px; top: 50%; translate: 0 -50%; color: var(--ink-2); pointer-events: none; }
+.label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: var(--sp-2); }
+input, textarea {
+  font: inherit; width: 100%; min-height: 52px; padding: 14px 16px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.field input, .field textarea { padding-left: 48px; }
+input::placeholder, textarea::placeholder { color: #9a7a72; }
+input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent); }
+.err { color: var(--danger); font-weight: 700; font-size: .9rem; min-height: 1.35em; margin: var(--sp-1) 0 0; }
+
+.card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.muted { color: var(--ink-2); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Status pills (colour + text, never colour alone) */
+.st-new { --c: var(--orange); --ci: var(--orange-ink); }
+.st-preparing { --c: var(--royal); --ci: var(--royal-ink); }
+.st-ready { --c: var(--green); --ci: var(--green-ink); }
+.st-done { --c: var(--grey); --ci: var(--grey-ink); }
+.st-cancelled { --c: var(--red); --ci: var(--red-ink); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-full); font-size: .78rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ci); background: color-mix(in srgb, var(--c) 13%, #fff); }
+
+.skel { border-radius: var(--r-md); background: linear-gradient(90deg, #fbeadb 0%, #fff 50%, #fbeadb 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: rot .7s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); bottom: 100px; z-index: 60;
+  display: flex; align-items: center; gap: var(--sp-2); padding: 10px 16px; border-radius: var(--r-full);
+  background: var(--ink); color: #fff; font-weight: 700; font-size: .92rem; box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}

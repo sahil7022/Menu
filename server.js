@@ -11,10 +11,8 @@ const ADMIN_PIN = process.env.ADMIN_PIN || '1234';
 const PUBLIC_URL = process.env.PUBLIC_URL || '';
 
 const ROOT = __dirname;
-const PUBLIC_DIR = path.join(ROOT, 'public');
+const PUBLIC_DIR = path.join(ROOT, 'dist'); // built by `npm run build`
 const DATA_DIR = path.join(ROOT, 'data');
-// Motion (vanilla build of Framer Motion), served from node_modules.
-const MOTION_JS = path.join(path.dirname(require.resolve('motion/package.json')), 'dist', 'motion.js');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 
 const menu = JSON.parse(fs.readFileSync(path.join(ROOT, 'menu.json'), 'utf8'));
@@ -27,8 +25,9 @@ try { orders = JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')); } catch { order
 const saveOrders = () => fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), () => {});
 let nextNo = orders.reduce((m, o) => Math.max(m, o.no), 0) + 1;
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
-const PAGES = { '/': 'index.html', '/admin': 'admin.html', '/qr': 'qr.html' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+// Single-page app: these routes all load the React app, which picks the page.
+const PAGES = { '/': 'index.html', '/admin': 'index.html', '/qr': 'index.html' };
 
 function send(res, status, body, type = 'application/json') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' });
@@ -111,10 +110,6 @@ const server = http.createServer(async (req, res) => {
       const svg = await QRCode.toString(siteUrl(req), { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#3b0a45', light: '#ffffff' } });
       return send(res, 200, svg, 'image/svg+xml');
     }
-    if (p === '/vendor/motion.js') {
-      res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'public, max-age=86400' });
-      return fs.createReadStream(MOTION_JS).pipe(res);
-    }
     if (p === '/api/site-url') return send(res, 200, { url: siteUrl(req) });
 
     // ---------- Static ----------
@@ -123,7 +118,8 @@ const server = http.createServer(async (req, res) => {
     if (!full.startsWith(PUBLIC_DIR)) return send(res, 403, 'Forbidden', 'text/plain');
     fs.readFile(full, (err, buf) => {
       if (err) return send(res, 404, 'Not found', 'text/plain');
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(full)] || 'application/octet-stream' });
+      const cache = file.startsWith('assets/') ? 'public, max-age=31536000, immutable' : 'no-cache';
+      res.writeHead(200, { 'Content-Type': MIME[path.extname(full)] || 'application/octet-stream', 'Cache-Control': cache });
       res.end(buf);
     });
   } catch (e) {

@@ -1,16 +1,23 @@
 {
   "name": "navrang-stall-menu",
   "version": "1.0.0",
-  "description": "Navrang-themed QR menu & ordering for a food stall",
+  "description": "Navrang-themed QR menu & ordering for a food stall (React + Framer Motion)",
   "main": "server.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
     "start": "node server.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "motion": "^14.9.0",
-    "qrcode": "^1.5.4"
+    "@vitejs/plugin-react": "^6.1.2",
+    "framer-motion": "^14.9.0",
+    "lucide-react": "^1.66.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "vite": "^8.3.5"
   }
 }
