@@ -20,7 +20,15 @@ npm start          # http://localhost:3000
 - `PORT` – default `3000`
 
 ## Edit the menu
-Change `menu.json` (stall name, tagline, categories, items, prices, emoji) and restart.
+Change `menu.json` and restart. Each item supports:
+`id`, `name`, `price`, `desc` (short description), `veg` (true/false), `popular` (shows a badge),
+and optional `image` (a URL or a file you put in `public/`, e.g. `"image": "/img/dhokla.jpg"`).
+
+## Animations
+Animations use [Motion](https://motion.dev) — the vanilla-JS edition of Framer Motion (same spring engine),
+served locally from `node_modules` at `/vendor/motion.js`. Helpers live in `public/fx.js`
+(springs, stagger, scroll-reveal, FLIP re-ordering, number count-ups, confetti).
+Everything switches off automatically for visitors with "reduce motion" enabled on their phone.
 
 ## Change the colours
 All colours are CSS variables at the top of `public/theme.css`.

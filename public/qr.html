@@ -5,38 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navrang · Scan to order</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Yatra+One&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/theme.css">
 <style>
   body { display: grid; place-items: center; padding: 24px; }
-  .poster { width: min(440px, 100%); text-align: center; overflow: hidden; }
-  .poster .inner { padding: 22px 26px 26px; }
-  h1 { margin: 0; font-size: 2.6rem; background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .frame { margin: 18px auto; padding: 14px; border-radius: 22px; background: var(--rainbow); width: fit-content; }
-  .frame img { display: block; width: 260px; height: 260px; background: #fff; border-radius: 12px; padding: 10px; }
-  .scan { font-size: 1.4rem; color: var(--purple); margin: 0; }
-  .url { word-break: break-all; font-size: .85rem; }
-  .print { margin-top: 18px; }
-  @media print { .print { display: none; } body { background: #fff; } .card { box-shadow: none; border: 2px solid #eee; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  .poster { width: min(460px, 100%); text-align: center; overflow: hidden; position: relative; border-radius: 28px; box-shadow: var(--shadow-md); }
+  .poster .mandala { position: absolute; opacity: .14; width: 200px; height: 200px; }
+  .poster .m1 { left: -80px; top: 40px; } .poster .m2 { right: -80px; bottom: 60px; animation-direction: reverse; }
+  .inner { position: relative; padding: 26px 28px 28px; }
+  .kicker { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-full); background: var(--surface-2); color: var(--brand); font-weight: 800; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+  h1 { margin: 12px 0 0; font-size: 2.6rem; line-height: 1.1; }
+  .frame { position: relative; margin: 22px auto; padding: 12px; border-radius: 26px; width: fit-content; overflow: hidden; isolation: isolate; }
+  .frame::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: conic-gradient(var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange)); animation: spin 6s linear infinite; }
+  .frame img { display: block; width: 260px; height: 260px; background: #fff; border-radius: 16px; padding: 12px; }
+  .steps { display: flex; justify-content: center; gap: 18px; margin: 0 0 6px; }
+  .steps div { display: grid; justify-items: center; gap: 6px; font-weight: 700; font-size: .85rem; }
+  .steps .ic { padding: 9px; width: 40px; height: 40px; border-radius: 12px; color: #fff; }
+  .url { word-break: break-all; font-size: .82rem; margin: 14px 0 0; }
+  .actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  @media print { .actions { display: none; } body { background: #fff; padding: 0; } .poster { box-shadow: none; border: 2px solid #eee; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; animation: none !important; } }
 </style>
 </head>
 <body>
 <div class="poster card">
-  <div class="toran"></div>
+  <div class="toran" aria-hidden="true"></div>
+  <div class="mandala m1" aria-hidden="true"></div><div class="mandala m2" aria-hidden="true"></div>
   <div class="inner">
-    <div style="font-size:2rem">🪔 💃 🕺 🪔</div>
-    <h1 id="name">Navrang</h1>
-    <p class="muted" id="tag"></p>
-    <div class="frame"><img src="/api/qr.svg" alt="QR code to open the menu"></div>
-    <p class="scan display">Scan · Order · Enjoy!</p>
+    <span class="kicker" id="kicker"></span>
+    <h1 class="rainbow-text" id="name">Navrang</h1>
+    <p class="muted" id="tag" style="margin:6px 0 0"></p>
+    <div class="frame" id="frame"><img src="/api/qr.svg" alt="QR code that opens the menu"></div>
+    <div class="steps" id="steps"></div>
     <p class="muted url" id="url"></p>
-    <button class="btn print" onclick="print()">🖨️ Print this poster</button>
+    <div class="actions">
+      <button class="btn" onclick="print()" data-press id="printBtn"></button>
+      <a class="btn ghost" href="/api/qr.svg" download="navrang-qr.svg" data-press id="dlBtn"></a>
+    </div>
   </div>
-  <div class="band"></div>
+  <div class="band" aria-hidden="true"></div>
 </div>
+<script src="/vendor/motion.js"></script>
+<script src="/fx.js"></script>
 <script>
-fetch('/api/menu').then((r) => r.json()).then((m) => { document.getElementById('name').textContent = m.stallName; document.getElementById('tag').textContent = m.tagline || ''; });
-fetch('/api/site-url').then((r) => r.json()).then((d) => { document.getElementById('url').textContent = d.url; });
+const $ = (id) => document.getElementById(id);
+$('kicker').innerHTML = icon('sparkles', 14) + 'Scan to order';
+$('printBtn').innerHTML = icon('printer', 18) + 'Print poster';
+$('dlBtn').innerHTML = icon('download', 18) + 'Download QR';
+$('steps').innerHTML = [['qr', 'Scan', '#7b1fa2'], ['bag', 'Order', '#e0123b'], ['utensils', 'Enjoy!', '#0f766e']]
+  .map(([i, t, c]) => `<div>${icon(i, 22).replace('class="ic ', `style="background:${c}" class="ic `)}${t}</div>`).join('');
+fx.enter(document.querySelectorAll('.kicker, h1, #tag'), { gap: 0.08 });
+fx.animate($('frame'), { scale: [0.7, 1], rotate: [-8, 0], opacity: [0, 1] }, { type: 'spring', stiffness: 200, damping: 14, delay: 0.2 });
+fx.enter(document.querySelectorAll('.steps > div'), { delay: 0.5, gap: 0.1 });
+fx.pressable();
+fetch('/api/menu').then((r) => r.json()).then((m) => { $('name').textContent = m.stallName; $('tag').textContent = m.tagline || ''; });
+fetch('/api/site-url').then((r) => r.json()).then((d) => { $('url').textContent = d.url; });
 </script>
 </body>
 </html>

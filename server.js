@@ -13,6 +13,8 @@ const PUBLIC_URL = process.env.PUBLIC_URL || '';
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = path.join(ROOT, 'data');
+// Motion (vanilla build of Framer Motion), served from node_modules.
+const MOTION_JS = path.join(path.dirname(require.resolve('motion/package.json')), 'dist', 'motion.js');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 
 const menu = JSON.parse(fs.readFileSync(path.join(ROOT, 'menu.json'), 'utf8'));
@@ -108,6 +110,10 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/qr.svg' && req.method === 'GET') {
       const svg = await QRCode.toString(siteUrl(req), { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#3b0a45', light: '#ffffff' } });
       return send(res, 200, svg, 'image/svg+xml');
+    }
+    if (p === '/vendor/motion.js') {
+      res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'public, max-age=86400' });
+      return fs.createReadStream(MOTION_JS).pipe(res);
     }
     if (p === '/api/site-url') return send(res, 200, { url: siteUrl(req) });
 

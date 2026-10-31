@@ -1,83 +1,131 @@
-/* Navrang theme — the nine colours of Navratri.
-   Tweak these variables to match your own banner/photo. */
+/* Navrang design system — the nine colours of Navratri.
+   Accessibility: text colours meet WCAG AA (4.5:1) on the surfaces they sit on,
+   touch targets are >= 44px, focus is always visible, motion respects user settings. */
 :root {
-  --orange: #ff7a00;
-  --red: #e0123b;
-  --royal: #1d3fbf;
-  --yellow: #ffc400;
-  --green: #11a84a;
-  --grey: #8a8f98;
-  --purple: #7b1fa2;
-  --peacock: #00a3a3;
-  --pink: #ff2e93;
+  /* Nine colours (fills) */
+  --orange: #ff7a00; --red: #e0123b; --royal: #1d3fbf; --yellow: #f5b700; --green: #11a84a;
+  --purple: #7b1fa2; --peacock: #00a3a3; --pink: #ff2e93; --grey: #8a8f98;
+  /* Readable "ink" versions for text on light surfaces */
+  --orange-ink: #b45309; --green-ink: #15803d; --peacock-ink: #0f766e; --pink-ink: #be185d; --red-ink: #be123c;
 
-  --bg: #fff8ef;
-  --ink: #2b0a33;
-  --card: #ffffff;
-  --muted: #7a6680;
-  --brand: var(--purple);
-  --accent: var(--pink);
+  /* Surfaces & text */
+  --bg: #fffaf3;
+  --surface: #ffffff;
+  --surface-2: #fdf4fb;
+  --line: #f0e3ee;
+  --ink: #2a0a32;
+  --ink-2: #5b4763;          /* secondary text, 7.6:1 on white */
+  --brand: #7b1fa2;
+  --brand-2: #c2187a;
+
   --rainbow: linear-gradient(90deg, var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange));
-  --radius: 18px;
-  --shadow: 0 6px 22px rgba(59, 10, 69, .12);
+  --cta: linear-gradient(135deg, #e01a7f 0%, #7b1fa2 100%);
+
+  --r-sm: 12px; --r-md: 18px; --r-lg: 24px; --r-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(42, 10, 50, .06), 0 2px 8px rgba(42, 10, 50, .05);
+  --shadow-md: 0 4px 12px rgba(42, 10, 50, .08), 0 12px 32px rgba(42, 10, 50, .08);
+  --shadow-cta: 0 8px 24px rgba(123, 31, 162, .35);
+  --ease: cubic-bezier(.2, .7, .3, 1);
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: "Yatra One", "Plus Jakarta Sans", serif;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
+html { scroll-padding-top: 140px; }
 body {
-  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font);
+  font-size: 16px; line-height: 1.5;
   color: var(--ink);
   background:
-    radial-gradient(circle at 10% 0%, rgba(255, 122, 0, .18), transparent 40%),
-    radial-gradient(circle at 100% 30%, rgba(255, 46, 147, .14), transparent 40%),
-    radial-gradient(circle at 0% 90%, rgba(0, 163, 163, .14), transparent 40%),
+    radial-gradient(60rem 30rem at 0% -10%, rgba(255, 122, 0, .13), transparent 60%),
+    radial-gradient(50rem 30rem at 110% 10%, rgba(255, 46, 147, .11), transparent 60%),
+    radial-gradient(50rem 30rem at -10% 100%, rgba(0, 163, 163, .10), transparent 60%),
     var(--bg);
-  min-height: 100vh;
+  background-attachment: fixed;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3, .display { font-family: "Yatra One", "Poppins", serif; font-weight: 400; }
+h1, h2, h3, .display { font-family: var(--display); font-weight: 400; letter-spacing: .01em; }
+button { font: inherit; color: inherit; }
+.ic { flex: none; display: block; }
 
-/* Decorative toran (festive bunting) strip */
+/* Toran (festive bunting) */
 .toran {
-  height: 14px;
-  background: var(--rainbow);
-  background-size: 200% 100%;
-  animation: shimmer 8s linear infinite;
+  height: 14px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 10s linear infinite;
   -webkit-mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
           mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
 }
-.band { height: 6px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 8s linear infinite; }
+.band { height: 5px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 10s linear infinite; }
 @keyframes shimmer { to { background-position: 200% 0; } }
+.rainbow-text { background: var(--rainbow); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 10s linear infinite; }
 
-/* Mandala / rangoli decoration */
+/* Rangoli mandala */
 .mandala {
-  width: 110px; height: 110px; border-radius: 50%;
-  background:
-    repeating-conic-gradient(var(--orange) 0 15deg, var(--pink) 15deg 30deg, var(--purple) 30deg 45deg, var(--peacock) 45deg 60deg, var(--yellow) 60deg 75deg, var(--green) 75deg 90deg);
+  width: 120px; height: 120px; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(var(--orange) 0 15deg, var(--pink) 15deg 30deg, var(--purple) 30deg 45deg, var(--peacock) 45deg 60deg, var(--yellow) 60deg 75deg, var(--green) 75deg 90deg);
   -webkit-mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
           mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
-  animation: spin 40s linear infinite;
+  animation: spin 50s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { to { rotate: 360deg; } }
 
+/* Buttons */
 .btn {
   appearance: none; border: 0; cursor: pointer;
-  font: inherit; font-weight: 600;
-  padding: 14px 20px; border-radius: 999px;
-  color: #fff; background: linear-gradient(135deg, var(--pink), var(--purple));
-  box-shadow: 0 6px 16px rgba(123, 31, 162, .35);
-  transition: transform .1s ease, filter .2s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 12px 22px; border-radius: var(--r-full);
+  font-weight: 700; font-size: 1rem; letter-spacing: .01em;
+  color: #fff; background: var(--cta); box-shadow: var(--shadow-cta);
+  transition: filter .2s var(--ease), box-shadow .2s var(--ease);
+  text-decoration: none; user-select: none;
 }
-.btn:active { transform: scale(.97); }
-.btn:disabled { filter: grayscale(1) opacity(.5); cursor: not-allowed; }
-.btn.ghost { background: #fff; color: var(--purple); box-shadow: inset 0 0 0 2px var(--purple); }
-.btn.small { padding: 8px 14px; font-size: .9rem; }
+.btn:hover { filter: brightness(1.06); }
+.btn:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btn.ghost { background: var(--surface); color: var(--brand); box-shadow: inset 0 0 0 1.5px var(--line), var(--shadow-sm); }
+.btn.ghost:hover { box-shadow: inset 0 0 0 1.5px var(--brand), var(--shadow-sm); }
+.btn.danger { background: var(--surface); color: var(--red-ink); box-shadow: inset 0 0 0 1.5px #f6c9d3; }
+.btn.small { min-height: 44px; padding: 8px 16px; font-size: .9rem; }
+.btn.block { width: 100%; }
 
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--pink) 70%, transparent); outline-offset: 2px; border-radius: 10px; }
+
+/* Fields */
+.field { position: relative; }
+.field .ic { position: absolute; left: 16px; top: 50%; translate: 0 -50%; color: var(--ink-2); pointer-events: none; }
 input, textarea {
-  font: inherit; width: 100%; padding: 14px 16px; border-radius: 14px;
-  border: 2px solid #ead7ef; background: #fff; color: var(--ink); outline: none;
+  font: inherit; width: 100%; min-height: 52px; padding: 14px 16px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); outline: none;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
 }
-input:focus, textarea:focus { border-color: var(--pink); }
+.field input { padding-left: 46px; }
+input::placeholder, textarea::placeholder { color: #8d7b93; }
+input:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 15%, transparent); }
 
-.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
-.muted { color: var(--muted); }
+.card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.muted { color: var(--ink-2); }
 .hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Status pills */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-full); font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.st-new { --c: var(--orange); --ci: var(--orange-ink); }
+.st-preparing { --c: var(--royal); --ci: var(--royal); }
+.st-ready { --c: var(--green); --ci: var(--green-ink); }
+.st-done { --c: var(--grey); --ci: #4b5563; }
+.st-cancelled { --c: var(--red); --ci: var(--red-ink); }
+.pill { color: var(--ci); background: color-mix(in srgb, var(--c) 13%, #fff); }
+
+/* Skeleton loader */
+.skel { border-radius: var(--r-md); background: linear-gradient(90deg, #f6ecf4 0%, #fff 50%, #f6ecf4 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: 96px; translate: -50% 0; z-index: 60;
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-full);
+  background: var(--ink); color: #fff; font-weight: 600; font-size: .92rem; box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
