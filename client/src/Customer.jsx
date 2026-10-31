@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate, useDragControls, useReducedMotion } from 'framer-motion';
 import {
-  ArrowRight, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
+  ArrowRight, Bell, BellRing, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
   Copy, MapPin, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
 import { BrandMark } from './ChatoreLogo.jsx';
+import { enablePush, pushState, useLive } from './live.js';
 import './customer.css';
 
-const LS_NAME = 'navrang_name', LS_ORDER = 'navrang_last_order';
+const LS_NAME = 'navrang_name', LS_ORDERS = 'chatore_orders', LS_PUSHED = 'chatore_push_orders';
+const readIds = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]'); } catch { return []; } };
+const ACTIVE = ['new', 'preparing', 'ready'];
 
 export default function Customer() {
   const [menu, setMenu] = useState(null);
@@ -17,7 +20,14 @@ export default function Customer() {
   const [screen, setScreen] = useState(null);           // 'name' | 'menu' | 'done'
   const [cart, setCart] = useState({});                 // id -> qty
   const [sheet, setSheet] = useState(false);
-  const [order, setOrder] = useState(null);
+  const [myIds, setMyIds] = useState(() => {            // every order this phone placed
+    const ids = readIds(LS_ORDERS);
+    const legacy = localStorage.getItem('navrang_last_order');
+    return legacy && !ids.includes(legacy) ? [...ids, legacy] : ids;
+  });
+  const [myOrders, setMyOrders] = useState({});         // id -> order (live)
+  const [viewId, setViewId] = useState(null);           // order shown on the 'done' screen
+  const [ordersSheet, setOrdersSheet] = useState(false);
   const [toast, setToast] = useState(null);
   const [confetti, fireConfetti] = useConfetti();
   const [gate, setGate] = useState(false);       // hidden workers' login
@@ -41,33 +51,49 @@ export default function Customer() {
     return { count, total };
   }, [cart, items]);
 
-  // Load menu + resume an unfinished order
+  useEffect(() => { localStorage.setItem(LS_ORDERS, JSON.stringify(myIds.slice(-20))); }, [myIds]);
+
+  // Fetch the latest state of all my orders; tell the customer when something changes.
+  const prev = useRef({});
+  const refresh = async () => {
+    if (!myIds.length) return;
+    const list = await fetchJSON('/api/orders?ids=' + myIds.join(',')).catch(() => null);
+    if (!list) return;
+    const next = Object.fromEntries(list.map((o) => [o.id, o]));
+    for (const o of list) {
+      const p = prev.current[o.id];
+      if (p && p.status !== o.status) {
+        if (o.status === 'ready') { navigator.vibrate?.([200, 100, 200]); showToast(`Order #${o.no} is ready — collect it!`); }
+        else if (o.status === 'preparing') showToast(`Order #${o.no} is being prepared`);
+      }
+      if (p && !p.paid && o.paid) showToast(`Payment received for #${o.no}`);
+    }
+    prev.current = next;
+    setMyOrders(next);
+  };
+  useLive(refresh, 5000, myIds.length > 0);
+  useEffect(() => { refresh(); }, [myIds.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load menu; open an order from a notification link (?order=…) or resume the latest unfinished one
   useEffect(() => {
     (async () => {
       const m = await fetchJSON('/api/menu');
       setMenu(m); document.title = `${m.stallName} · Menu`;
-      const last = localStorage.getItem(LS_ORDER);
-      if (name && last) {
-        const o = await fetchJSON('/api/orders/' + last).catch(() => null);
-        if (o && !['done', 'cancelled'].includes(o.status)) { setOrder(o); return setScreen('done'); }
+      const fromLink = new URLSearchParams(location.search).get('order');
+      if (fromLink && /^[a-z0-9]+$/.test(fromLink)) {
+        setMyIds((ids) => (ids.includes(fromLink) ? ids : [...ids, fromLink]));
+        setViewId(fromLink); history.replaceState(null, '', '/'); return setScreen('done');
+      }
+      const ids = myIds;
+      if (name && ids.length) {
+        const list = await fetchJSON('/api/orders?ids=' + ids.join(',')).catch(() => []);
+        const open = list.filter((o) => ACTIVE.includes(o.status)).sort((a, b) => b.no - a.no)[0];
+        if (open) { setViewId(open.id); return setScreen('done'); }
       }
       setScreen(name ? 'menu' : 'name');
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Poll the order status while waiting
-  useEffect(() => {
-    if (screen !== 'done' || !order || ['done', 'cancelled'].includes(order.status)) return;
-    const t = setInterval(async () => {
-      const o = await fetchJSON('/api/orders/' + order.id).catch(() => null);
-      if (o && (o.status !== order.status || o.paid !== order.paid)) {
-        if (o.status === 'ready') navigator.vibrate?.([200, 100, 200]);
-        setOrder(o);
-      }
-    }, 5000);
-    return () => clearInterval(t);
-  }, [screen, order]);
 
   const change = (id, d) => {
     const cur = cart[id] || 0;
@@ -82,7 +108,7 @@ export default function Customer() {
   function showToast(msg) {
     setToast({ msg, id: Math.random() });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 1500);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
   }
 
   async function placeOrder(note) {
@@ -90,20 +116,35 @@ export default function Customer() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, note, items: Object.entries(cart).map(([id, qty]) => ({ id, qty })) }),
     });
-    localStorage.setItem(LS_ORDER, o.id);
-    setSheet(false); setCart({}); setOrder(o); setScreen('done');
+    prev.current[o.id] = o;
+    setMyOrders((m) => ({ ...m, [o.id]: o }));
+    setMyIds((ids) => [...ids, o.id]);
+    setSheet(false); setCart({}); setViewId(o.id); setScreen('done');
+    // already allowed notifications before? follow this order too, silently
+    if (pushState() === 'ok' && localStorage.getItem(LS_PUSHED)) {
+      enablePush(`/api/orders/${o.id}/push`).then(() => markPushed(o.id)).catch(() => {});
+    }
   }
 
+  const openOrder = (id) => { setOrdersSheet(false); setViewId(id); setScreen('done'); scrollTo({ top: 0, behavior: 'smooth' }); };
   const compact = screen === 'menu' || screen === 'done';
+  const mine = myIds.map((id) => myOrders[id]).filter(Boolean).sort((a, b) => b.no - a.no);
+  const activeCount = mine.filter((o) => ACTIVE.includes(o.status)).length;
+  const viewed = viewId && myOrders[viewId];
 
   return (
     <>
       <Embers />
       <div className="toran" aria-hidden="true" />
+      {screen && screen !== 'name' && (
+        <TopActions cartCount={count} ordersCount={activeCount} hasOrders={mine.length > 0}
+          onCart={() => { if (count) { setScreen('menu'); setSheet(true); } else { setScreen('menu'); showToast('Your cart is empty — add something tasty!'); } }}
+          onOrders={() => setOrdersSheet(true)} />
+      )}
       <Hero menu={menu} compact={compact} onTitle={onTitleTap} />
 
       <main className="wrap">
-        {!screen && <Skeleton />}
+        {(!screen || (screen === 'done' && !viewed)) && <Skeleton />}
         <AnimatePresence mode="wait">
           {screen === 'name' && (
             <NameScreen key="name" initial={name} onDone={(n) => { setName(n); localStorage.setItem(LS_NAME, n); setScreen('menu'); }} />
@@ -112,9 +153,9 @@ export default function Customer() {
             <MenuScreen key="menu" menu={menu} name={name} cart={cart} change={change} money={money}
               onChangeName={() => setScreen('name')} />
           )}
-          {screen === 'done' && order && (
-            <Confirmation key="done" order={order} money={money} fireConfetti={fireConfetti}
-              onAgain={() => { localStorage.removeItem(LS_ORDER); setOrder(null); setScreen('menu'); }} />
+          {screen === 'done' && viewed && (
+            <Confirmation key={'done-' + viewed.id} order={viewed} money={money} fireConfetti={fireConfetti}
+              onAgain={() => setScreen('menu')} onAllOrders={() => setOrdersSheet(true)} />
           )}
         </AnimatePresence>
       </main>
@@ -133,6 +174,10 @@ export default function Customer() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {ordersSheet && <OrdersSheet key="orders" orders={mine} money={money} onOpen={openOrder} onClose={() => setOrdersSheet(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {toast && (
           <motion.div key={toast.id} className="toast" role="status"
             initial={{ opacity: 0, y: 16, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10 }} transition={T.spring}>
@@ -142,6 +187,72 @@ export default function Customer() {
       </AnimatePresence>
       <AnimatePresence>{gate && <StaffGate key="gate" onClose={() => setGate(false)} />}</AnimatePresence>
       {confetti}
+    </>
+  );
+}
+
+const markPushed = (id) => {
+  const ids = readIds(LS_PUSHED);
+  if (!ids.includes(id)) localStorage.setItem(LS_PUSHED, JSON.stringify([...ids, id].slice(-20)));
+};
+
+/* ---------------- Top-right: cart + my orders ---------------- */
+function TopActions({ cartCount, ordersCount, hasOrders, onCart, onOrders }) {
+  return (
+    <motion.div className="topactions" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={T.soft}>
+      <motion.button className="topbtn" onClick={onCart} aria-label={`Cart, ${cartCount} items`} {...press}>
+        <ShoppingBag size={22} aria-hidden="true" />
+        <AnimatePresence>{cartCount > 0 && <motion.span key={cartCount} className="topbadge" initial={{ scale: 1.8 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={T.bouncy}>{cartCount}</motion.span>}</AnimatePresence>
+      </motion.button>
+      {hasOrders && (
+        <motion.button className="topbtn" onClick={onOrders} aria-label={`My orders, ${ordersCount} in progress`} {...press}
+          initial={{ scale: 0 }} animate={{ scale: 1 }} transition={T.bouncy}>
+          <ReceiptText size={22} aria-hidden="true" />
+          <AnimatePresence>{ordersCount > 0 && <motion.span key={ordersCount} className="topbadge live" initial={{ scale: 1.8 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={T.bouncy}>{ordersCount}</motion.span>}</AnimatePresence>
+        </motion.button>
+      )}
+    </motion.div>
+  );
+}
+
+const STATUS_LABEL = { new: 'Received', preparing: 'Preparing', ready: 'Ready!', done: 'Collected', cancelled: 'Cancelled' };
+
+function OrdersSheet({ orders, money, onOpen, onClose }) {
+  useEffect(() => {
+    const k = (e) => e.key === 'Escape' && onClose();
+    addEventListener('keydown', k); return () => removeEventListener('keydown', k);
+  }, [onClose]);
+  return (
+    <>
+      <motion.div className="sheet-bg" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={T.fade} />
+      <motion.div className="sheet" role="dialog" aria-modal="true" aria-labelledby="myOrdersTitle"
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%', transition: { duration: 0.22, ease: 'easeIn' } }} transition={T.sheet}>
+        <div className="grab"><div className="handle" aria-hidden="true" /></div>
+        <div className="sheet-head">
+          <h2 id="myOrdersTitle">My orders</h2>
+          <motion.button className="iconbtn" onClick={onClose} aria-label="Close" {...press}><X size={20} aria-hidden="true" /></motion.button>
+        </div>
+        <div className="sheet-body" style={{ paddingBottom: 18 }}>
+          <p className="muted" style={{ margin: '0 0 8px', fontSize: '.9rem' }}>Live status — updates by itself.</p>
+          <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.05 } } }}>
+            {orders.map((o) => (
+              <motion.button key={o.id} className={`myorder st-${o.status}`} onClick={() => onOpen(o.id)} layout
+                variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} whileTap={{ scale: 0.98 }}>
+                <span className="mo-no brand">#{o.no}</span>
+                <span className="mo-mid">
+                  <span className="mo-items">{o.items.map((i) => `${i.qty}× ${i.name}`).join(', ')}</span>
+                  <span className="mo-tags">
+                    <span className="pill">{STATUS_LABEL[o.status]}</span>
+                    <span className={`pill ${o.paid ? 'st-ready' : 'st-new'}`}>{o.paid ? 'Paid' : 'Unpaid'}</span>
+                  </span>
+                </span>
+                <span className="mo-amt">{money(o.total)}</span>
+              </motion.button>
+            ))}
+            {!orders.length && <p className="muted">No orders yet.</p>}
+          </motion.div>
+        </div>
+      </motion.div>
     </>
   );
 }
@@ -486,13 +597,14 @@ const STATUS_TEXT = {
   ready: 'Your order is ready! Please collect it', done: 'Collected — enjoy your food!', cancelled: 'This order was cancelled. Please ask at the counter.',
 };
 
-function Confirmation({ order: o, money, fireConfetti, onAgain }) {
+function Confirmation({ order: o, money, fireConfetti, onAgain, onAllOrders }) {
   const idx = { new: 0, preparing: 1, ready: 2, done: 2 }[o.status] ?? -1;
   const numRef = useRef();
   const cancelled = o.status === 'cancelled';
   const first = useRef(true);
   useEffect(() => {
-    if (first.current || o.status === 'ready') setTimeout(() => fireConfetti(numRef.current), 350);
+    const fresh = Date.now() - new Date(o.createdAt).getTime() < 60000;   // just placed
+    if ((first.current && fresh) || (!first.current && o.status === 'ready')) setTimeout(() => fireConfetti(numRef.current), 350);
     first.current = false;
   }, [o.status, fireConfetti]);
 
@@ -535,6 +647,7 @@ function Confirmation({ order: o, money, fireConfetti, onAgain }) {
         </motion.p>
       </AnimatePresence>
 
+      {ACTIVE.includes(o.status) && <NotifyCard o={o} />}
       {!cancelled && o.upi && <PayCard o={o} money={money} />}
 
       <div className="receipt">
@@ -544,7 +657,38 @@ function Confirmation({ order: o, money, fireConfetti, onAgain }) {
       </div>
       <p className="muted hint"><Clock size={16} aria-hidden="true" />Show this screen at the counter — it updates automatically.</p>
       <motion.button className="btn block" onClick={onAgain} {...press}>Order something else</motion.button>
+      <button className="linkbtn" onClick={onAllOrders} style={{ marginTop: 6 }}><ReceiptText size={16} aria-hidden="true" style={{ verticalAlign: '-3px', marginRight: 6 }} />See all my orders</button>
     </motion.section>
+  );
+}
+
+/* ---------------- Notifications ---------------- */
+function NotifyCard({ o }) {
+  const already = () => pushState() === 'ok' && readIds(LS_PUSHED).includes(o.id);
+  const [state, setState] = useState(already() ? 'on' : 'idle');   // idle | busy | on | ios | denied | error
+  async function turnOn() {
+    setState('busy');
+    try { await enablePush(`/api/orders/${o.id}/push`); markPushed(o.id); setState('on'); }
+    catch (e) { setState(e.code === 'ios-install' ? 'ios' : e.code === 'denied' ? 'denied' : 'error'); }
+  }
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div key={state} className={`notifycard ${state === 'on' ? 'on' : ''}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={T.soft}>
+        {state === 'on' ? (
+          <><BellRing size={20} aria-hidden="true" /><span><b>Notifications on.</b> We'll message you when it's preparing and when it's ready.</span></>
+        ) : state === 'ios' ? (
+          <><Bell size={20} aria-hidden="true" /><span>On iPhone: tap <b>Share → Add to Home Screen</b>, open Chatore from there, then tap “Notify me”. This screen also updates live.</span></>
+        ) : state === 'denied' ? (
+          <><Bell size={20} aria-hidden="true" /><span>Notifications are blocked in your browser settings — no problem, this screen updates live.</span></>
+        ) : (
+          <>
+            <Bell size={20} aria-hidden="true" />
+            <span><b>Get a message</b> when your food is being prepared and when it's ready.{state === 'error' && <em className="err" style={{ display: 'block' }}>Couldn't turn on — try again.</em>}</span>
+            <motion.button className="btn small" onClick={turnOn} disabled={state === 'busy'} {...press}>{state === 'busy' ? <span className="spinner" /> : 'Notify me'}</motion.button>
+          </>
+        )}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

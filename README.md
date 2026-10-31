@@ -48,6 +48,22 @@ pre-filled), a QR code, and your UPI ID to copy. Money goes straight to your acc
 Payments are **not** auto-detected: check your UPI app, then tap **Unpaid · mark paid** on the order in `/admin`;
 the customer's screen turns green. Remove the `upi` block to hide online payment.
 
+## Live updates & notifications
+- Every screen updates by itself — instantly via Supabase Realtime pings, with a 3–5 s refresh as backup.
+- **Customers**: after ordering, tap **Notify me** to get phone notifications: order confirmed → preparing → ready → payment received.
+  The cart and **My orders** buttons (top-right) show every order this phone placed, with live status.
+- **Workers**: tap **Phone alerts** on the orders page to get a notification for every new order.
+- Uses standard Web Push (the same delivery Firebase Cloud Messaging uses in browsers) — free, no extra account.
+  Keys are created automatically on first use and kept in the database.
+  Android/Chrome/desktop work directly. **iPhone (iOS 16.4+) only after "Share → Add to Home Screen"** and opening it from there.
+
+## Money (investment & profit)
+On the orders page, add each investment (ingredients, gas, stall rent…). The Money panel shows
+Investment, Collected (orders marked paid), Unpaid, and Profit/Loss = collected − investment, with a break-even bar.
+
+## Reset database
+Orders page → **Reset database** → choose orders and/or investment entries → type RESET.
+
 ## Workers' login
 Tap the stall name on the menu page **5 times quickly** to open the "Poonam's Workers" login,
 or go to `/admin` directly.
