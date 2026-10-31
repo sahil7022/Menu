@@ -1,4 +1,4 @@
-# Chatore (चटोरे) — QR Menu & Orders for the Navrang food stall
+# Hawres (हावरे) — QR Menu & Orders for the Navrang food stall
 
 A Navratri / Navrang-themed (nine colours) ordering site for a food stall.
 
@@ -73,8 +73,8 @@ Poonam's Workers edit the menu on the orders page → **Menu** → *Add dish* / 
 Customers' screens update by themselves. (`menu.json` still holds the stall name, event details and UPI ID.)
 
 ## Printing the QR
-`print/chatore-qr-poster.png` (full poster) and `print/chatore-qr.png` (plain QR) both open https://navrang-menu.vercel.app.
-Opening the site shows a splash screen (Chatore logo + fireworks) once per visit.
+`print/hawres-qr-poster.png` (full poster) and `print/hawres-qr.png` (plain QR) both open https://navrang-menu.vercel.app.
+Opening the site shows a splash screen (Hawres logo + fireworks) once per visit.
 
 ## Tech & design
 - **React + Vite** frontend in `client/`, **Framer Motion** for every animation

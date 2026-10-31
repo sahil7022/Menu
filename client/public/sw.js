@@ -1,11 +1,11 @@
-// Chatore service worker: shows push notifications and opens the right page when tapped.
+// Hawres service worker: shows push notifications and opens the right page when tapped.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener('push', (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Chatore', body: event.data && event.data.text() }; }
-  event.waitUntil(self.registration.showNotification(data.title || 'Chatore', {
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Hawres', body: event.data && event.data.text() }; }
+  event.waitUntil(self.registration.showNotification(data.title || 'Hawres', {
     body: data.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',

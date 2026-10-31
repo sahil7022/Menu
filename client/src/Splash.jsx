@@ -1,4 +1,4 @@
-// Opening splash: Chatore logo with fireworks behind it. Shown once per visit (e.g. right after scanning the QR).
+// Opening splash: Hawres logo with fireworks behind it. Shown once per visit (e.g. right after scanning the QR).
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import ChatoreLogo from './ChatoreLogo.jsx';
@@ -62,7 +62,7 @@ export default function Splash({ menu, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, reduce ? 1100 : 2900); return () => clearTimeout(t); }, [onDone, reduce]);
   const ev = menu?.event;
   return (
-    <motion.div className="splash" onClick={onDone} role="dialog" aria-label="Welcome to Chatore"
+    <motion.div className="splash" onClick={onDone} role="dialog" aria-label="Welcome to Hawres"
       initial={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.45 } }}>
       {!reduce && <Fireworks />}
       <div className="splash-glow" aria-hidden="true" />
@@ -70,7 +70,7 @@ export default function Splash({ menu, onDone }) {
         <ChatoreLogo size={150} />
       </motion.div>
       <motion.div className="splash-words" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...T.soft, delay: 0.55 }}>
-        <span className="logo gold-text brand">{(menu?.stallName || 'Chatore').toLowerCase()}</span>
+        <span className="logo gold-text brand">{(menu?.stallName || 'Hawres').toLowerCase()}</span>
         {menu?.stallNameHindi && <span className="hindi brand" lang="hi">{menu.stallNameHindi}</span>}
         {ev && <span className="splash-ev">✦ {ev.name} · {ev.dates} ✦</span>}
       </motion.div>

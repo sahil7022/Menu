@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate } from 'framer-motion';
 import {
   Bell, BellOff, Check, ChefHat, CircleCheck, Clock, Download, Lock, LogOut,
-  BadgeIndianRupee, BellRing, NotebookPen, Pencil, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
+  Banknote, BadgeIndianRupee, BellRing, HandPlatter, Smartphone, NotebookPen, Pencil, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
 import ChatoreLogo from './ChatoreLogo.jsx';
@@ -11,7 +11,8 @@ import './admin.css';
 
 const money = makeMoney('₹');
 const ACTIVE = ['new', 'preparing', 'ready'];
-const NEXT = { new: ['preparing', 'Start preparing', ChefHat], preparing: ['ready', 'Mark ready', CircleCheck], ready: ['done', 'Collected', Check] };
+const NEXT = { new: ['preparing', 'Start preparing', ChefHat], preparing: ['ready', 'Mark ready', CircleCheck], ready: ['done', 'Hand over', HandPlatter] };
+const STATUS_NAME = { new: 'new', preparing: 'preparing', ready: 'ready', done: 'handed over', cancelled: 'cancelled' };
 const FILTERS = [['active', 'Active'], ['new', 'New'], ['preparing', 'Preparing'], ['ready', 'Ready'], ['done', 'Done'], ['all', 'All']];
 
 function beep() {
@@ -40,7 +41,7 @@ export default function Admin() {
   const seen = useRef(null);
   const soundRef = useRef(sound); soundRef.current = sound;
 
-  useEffect(() => { document.title = 'Chatore · Orders'; }, []);
+  useEffect(() => { document.title = 'Hawres · Orders'; }, []);
 
   const api = useCallback(async (path, opts = {}) => {
     try {
@@ -60,7 +61,7 @@ export default function Admin() {
       if (n.length) {
         setFresh((f) => new Set([...f, ...n.map((o) => o.id)]));
         if (soundRef.current) beep();
-        document.title = `(${n.length}) New order!`; setTimeout(() => (document.title = 'Chatore · Orders'), 4000);
+        document.title = `(${n.length}) New order!`; setTimeout(() => (document.title = 'Hawres · Orders'), 4000);
       }
     }
     seen.current = new Set(list.map((o) => o.id));
@@ -70,13 +71,27 @@ export default function Admin() {
   useEffect(() => { if (pin && !authed && sessionStorage.getItem('navrang_pin')) load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useLive(load, 3000, authed);   // instant updates (plus a 3-second safety refresh)
 
-  async function setPaid(o, paid) {
-    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, paid } : x))); // optimistic
-    await api('/api/admin/orders/' + o.id, { method: 'PATCH', body: JSON.stringify({ paid }) }).catch(() => {});
+  const [payAsk, setPayAsk] = useState(null);   // order waiting for "how did they pay?" before hand-over
+
+  // paid by cash (offline, at the counter) or UPI; paid=false to undo
+  async function setPaid(o, paid, method) {
+    if (!paid && !confirm(`Mark order #${o.no} as NOT paid?`)) return;
+    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, paid, payMethod: paid ? method : null } : x))); // optimistic
+    await api('/api/admin/orders/' + o.id, { method: 'PATCH', body: JSON.stringify({ paid, method }) }).catch(() => {});
+    load();
+  }
+
+  // hand over + record payment in one go
+  async function handOver(o, method) {
+    setPayAsk(null);
+    const body = method ? { status: 'done', paid: true, method } : { status: 'done' };
+    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status: 'done', ...(method ? { paid: true, payMethod: method } : {}) } : x)));
+    await api('/api/admin/orders/' + o.id, { method: 'PATCH', body: JSON.stringify(body) }).catch(() => {});
     load();
   }
 
   async function setStatus(o, status) {
+    if (status === 'done' && !o.paid) { setPayAsk(o); return; }   // ask how they paid first
     if (status === 'cancelled' && !confirm(`Cancel order #${o.no}?`)) return;
     setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; });
     setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status } : x))); // optimistic
@@ -100,8 +115,8 @@ export default function Admin() {
   if (!authed) return <Login pin={pin} setPin={setPin} err={loginErr} onSubmit={() => { setLoginErr(''); seen.current = null; load(); }} />;
 
   const exportCsv = () => {
-    const rows = [['No', 'Name', 'Items', 'Total', 'Paid', 'Status', 'Time', 'Note']].concat(orders.map((o) =>
-      [o.no, o.name, o.items.map((i) => `${i.qty}x ${i.name}`).join('; '), o.total, o.paid ? 'yes' : 'no', o.status, new Date(o.createdAt).toLocaleString(), o.note || '']));
+    const rows = [['No', 'Name', 'Items', 'Total', 'Paid', 'Paid by', 'Status', 'Time', 'Note']].concat(orders.map((o) =>
+      [o.no, o.name, o.items.map((i) => `${i.qty}x ${i.name}`).join('; '), o.total, o.paid ? 'yes' : 'no', o.paid ? (o.payMethod || 'upi') : '', o.status, new Date(o.createdAt).toLocaleString(), o.note || '']));
     const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -120,7 +135,7 @@ export default function Admin() {
       <div className="toran" aria-hidden="true" />
       <div className="awrap">
         <header className="top">
-          <h1><ChatoreLogo size={52} title="Chatore" />Chatore · Orders
+          <h1><ChatoreLogo size={52} title="Hawres" />Hawres · Orders
             <span className="live"><motion.i animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />Live</span>
           </h1>
           <div className="tools">
@@ -185,6 +200,9 @@ export default function Admin() {
         </p>
       </div>
       <AnimatePresence>
+        {payAsk && <PayAsk key="payask" o={payAsk} onPick={(m) => handOver(payAsk, m)} onClose={() => setPayAsk(null)} />}
+      </AnimatePresence>
+      <AnimatePresence>
         {resetOpen && <ResetDialog key="reset" api={api} onClose={() => setResetOpen(false)} onDone={() => { setResetOpen(false); seen.current = null; setFresh(new Set()); load(); }} />}
       </AnimatePresence>
     </>
@@ -201,7 +219,7 @@ function OrderCard({ o, fresh, onStatus, onPaid, onSeen }) {
       <div className="otop">
         <span className="no">#{o.no}</span>
         <AnimatePresence mode="wait" initial={false}>
-          <motion.span key={o.status} className="pill" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}>{o.status}</motion.span>
+          <motion.span key={o.status} className="pill" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}>{STATUS_NAME[o.status]}</motion.span>
         </AnimatePresence>
       </div>
       <div className="who"><User size={18} aria-hidden="true" />{o.name}</div>
@@ -210,11 +228,18 @@ function OrderCard({ o, fresh, onStatus, onPaid, onSeen }) {
       <div className="foot">
         <span className="paybox">
           <b>{money(o.total)}</b>
-          <motion.button key={o.paid ? 'p' : 'u'} className={`paytag ${o.paid ? 'paid' : ''}`} onClick={() => onPaid(o, !o.paid)}
-            aria-label={o.paid ? `Order ${o.no} is paid. Tap to mark unpaid` : `Order ${o.no} is unpaid. Tap to mark paid`}
-            initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={T.bouncy} whileTap={{ scale: 0.9 }}>
-            {o.paid ? <><Check size={14} aria-hidden="true" />Paid</> : <>Unpaid · mark paid</>}
-          </motion.button>
+          {o.paid ? (
+            <motion.button key="p" className="paytag paid" onClick={() => onPaid(o, false)} aria-label={`Order ${o.no} paid by ${o.payMethod === 'cash' ? 'cash' : 'UPI'}. Tap to undo`}
+              initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={T.bouncy} whileTap={{ scale: 0.9 }}>
+              <Check size={14} aria-hidden="true" />Paid · {o.payMethod === 'cash' ? 'Cash' : 'UPI'}
+            </motion.button>
+          ) : o.status !== 'cancelled' && (
+            <span className="paypick">
+              <span className="unpaid">Unpaid</span>
+              <motion.button className="paybtn" onClick={() => onPaid(o, true, 'cash')} aria-label={`Order ${o.no}: cash received`} whileTap={{ scale: 0.9 }}><Banknote size={15} aria-hidden="true" />Cash</motion.button>
+              <motion.button className="paybtn" onClick={() => onPaid(o, true, 'upi')} aria-label={`Order ${o.no}: UPI received`} whileTap={{ scale: 0.9 }}><Smartphone size={15} aria-hidden="true" />UPI</motion.button>
+            </span>
+          )}
         </span>
         <span className="time"><Clock size={14} aria-hidden="true" />{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
@@ -282,6 +307,8 @@ function MoneyPanel({ live, expenses, api, setExpenses }) {
   const [busy, setBusy] = useState(false);
   const invest = expenses.reduce((s, e) => s + e.amount, 0);
   const collected = live.filter((o) => o.paid).reduce((s, o) => s + o.total, 0);
+  const cash = live.filter((o) => o.paid && o.payMethod === 'cash').reduce((s, o) => s + o.total, 0);
+  const upi = collected - cash;
   const pending = live.filter((o) => !o.paid).reduce((s, o) => s + o.total, 0);
   const profit = collected - invest;
   const ifAllPaid = collected + pending - invest;
@@ -317,7 +344,8 @@ function MoneyPanel({ live, expenses, api, setExpenses }) {
         {tiles.map(([l, v, I, c, ci]) => (
           <motion.div key={l} className={`mtile ${l.startsWith('Profit') || l.startsWith('Loss') ? 'big' : ''}`} style={{ '--c': c, '--ci': ci }} layout>
             <span className="sic"><I size={22} aria-hidden="true" /></span>
-            <div><div className="v"><AnimatedNumber value={v} format={money} /></div><div className="l">{l}</div></div>
+            <div><div className="v"><AnimatedNumber value={v} format={money} /></div><div className="l">{l}</div>
+              {l === 'Collected' && <div className="split"><Banknote size={12} aria-hidden="true" />Cash {money(cash)} · <Smartphone size={12} aria-hidden="true" />UPI {money(upi)}</div>}</div>
           </motion.div>
         ))}
       </div>
@@ -515,6 +543,29 @@ function ItemDialog({ item, cats, api, onClose, onSaved }) {
             <motion.button className="btn small" disabled={busy} {...press}><Check size={18} aria-hidden="true" />{busy ? 'Saving…' : 'Save dish'}</motion.button>
           </div>
         </motion.form>
+      </div>
+    </>
+  );
+}
+
+/* ---------------- "How did they pay?" before handing over ---------------- */
+function PayAsk({ o, onPick, onClose }) {
+  useEffect(() => { const k = (e) => e.key === 'Escape' && onClose(); addEventListener('keydown', k); return () => removeEventListener('keydown', k); }, [onClose]);
+  return (
+    <>
+      <motion.div className="modal-bg" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+      <div className="modal-wrap">
+        <motion.div className="modal card payask" role="dialog" aria-modal="true" aria-labelledby="payAskTitle"
+          initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.spring}>
+          <h3 id="payAskTitle" style={{ color: 'var(--gold)' }}>Hand over #{o.no}</h3>
+          <p className="muted">How did <b>{o.name}</b> pay <b style={{ color: 'var(--gold)' }}>{money(o.total)}</b>?</p>
+          <div className="paychoices">
+            <motion.button className="btn" onClick={() => onPick('cash')} {...press}><Banknote size={20} aria-hidden="true" />Cash</motion.button>
+            <motion.button className="btn" onClick={() => onPick('upi')} {...press}><Smartphone size={20} aria-hidden="true" />UPI</motion.button>
+          </div>
+          <motion.button className="btn small ghost block" onClick={() => onPick(null)} {...press}>Not paid yet — hand over anyway</motion.button>
+          <button className="linkbtn" onClick={onClose} style={{ width: '100%' }}>Cancel</button>
+        </motion.div>
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-// Chatore stall server for Render or your own computer: serves the built React app (dist/) and the API.
+// Hawres stall server for Render or your own computer: serves the built React app (dist/) and the API.
 // On Vercel, api/index.js serves the API instead and Vercel serves dist/ itself.
 const http = require('http');
 const fs = require('fs');
@@ -25,7 +25,7 @@ http.createServer((req, res) => {
     res.end(buf);
   });
 }).listen(PORT, () => {
-  console.log(`Chatore stall running on http://localhost:${PORT}`);
+  console.log(`Hawres stall running on http://localhost:${PORT}`);
   console.log(`  Customer menu : /       Orders (staff): /admin  (PIN ${ADMIN_PIN === '1234' ? '1234 - change via ADMIN_PIN' : 'set'})`);
   console.log(`  Printable QR  : /qr     Orders saved in: ${store.kind()}`);
 });

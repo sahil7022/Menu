@@ -119,3 +119,12 @@ header.top h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 10px
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .modal input:not([type="checkbox"]) { min-height: 48px; }
 @media (max-width: 560px) { .mrow { flex-wrap: wrap; } .mname { flex-basis: 100%; } }
+
+.paypick { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.unpaid { font-size: .75rem; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; color: var(--orange-ink); }
+.paybtn { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 4px 12px; border-radius: var(--r-full); cursor: pointer;
+  border: 1.5px solid var(--line); background: var(--surface-2); color: var(--ink); font-weight: 800; font-size: .82rem; }
+.paybtn:hover { border-color: var(--gold); color: var(--gold); }
+.mtile .split { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: .75rem; color: var(--ink-2); margin-top: 2px; }
+.paychoices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 8px; }
+.payask p { margin: 0 0 6px; }

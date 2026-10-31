@@ -1,6 +1,6 @@
 {
-  "stallName": "Chatore",
-  "stallNameHindi": "चटोरे",
+  "stallName": "Hawres",
+  "stallNameHindi": "हावरे",
   "tagline": "Ungliyan chaatte reh jaoge!",
   "currency": "₹",
   "event": {
@@ -13,7 +13,7 @@
   },
   "upi": {
     "id": "6362781833@jio",
-    "name": "Chatore"
+    "name": "Hawres"
   },
   "categories": [
     {

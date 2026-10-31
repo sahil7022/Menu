@@ -1,8 +1,8 @@
-// "Chatore" logo: a golden golgappa (pani puri) face licking its lips, with a chilli on top.
+// "Hawres" logo: a golden golgappa (pani puri) face licking its lips, with a chilli on top.
 // Chatora = someone who can't resist tasty, spicy street food.
 import { motion, useReducedMotion } from 'framer-motion';
 
-export default function ChatoreLogo({ size = 96, animated = true, title = 'Chatore logo' }) {
+export default function ChatoreLogo({ size = 96, animated = true, title = 'Hawres logo' }) {
   const reduce = useReducedMotion();
   const live = animated && !reduce;
   return (
@@ -73,7 +73,7 @@ export function BrandMark({ menu, size = 104, row = false, variants }) {
     <span className={`brandmark ${row ? 'row' : ''}`}>
       <motion.span className="brandmark-logo" variants={variants}><ChatoreLogo size={size} /></motion.span>
       <span className="brandmark-words">
-        <motion.span className="logo gold-text brand" variants={variants}>{(menu?.stallName || 'Chatore').toLowerCase()}</motion.span>
+        <motion.span className="logo gold-text brand" variants={variants}>{(menu?.stallName || 'Hawres').toLowerCase()}</motion.span>
         {menu?.stallNameHindi && <motion.span className="hindi brand" variants={variants} lang="hi">{menu.stallNameHindi}</motion.span>}
         <motion.span className="sublogo" variants={variants}>Food Stall</motion.span>
       </span>

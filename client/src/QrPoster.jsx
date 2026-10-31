@@ -12,7 +12,7 @@ export default function QrPoster() {
   const [menu, setMenu] = useState(null);
   const [url, setUrl] = useState('');
   useEffect(() => {
-    document.title = 'Chatore · Scan to order';
+    document.title = 'Hawres · Scan to order';
     fetchJSON('/api/menu').then(setMenu);
     fetchJSON('/api/site-url').then((d) => setUrl(d.url));
   }, []);

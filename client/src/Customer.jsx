@@ -252,7 +252,7 @@ function NotifyPrompt({ orderId, onClose, onOn }) {
           </motion.div>
           <h2 id="askTitle">Turn on notifications</h2>
           {ios ? (
-            <p className="muted">On iPhone: tap <b>Share</b> <span aria-hidden="true">⎋</span> → <b>Add to Home Screen</b>, open <b>Chatore</b> from your home screen, then tap “Notify me” on your order. Until then this page updates live while it's open.</p>
+            <p className="muted">On iPhone: tap <b>Share</b> <span aria-hidden="true">⎋</span> → <b>Add to Home Screen</b>, open <b>Hawres</b> from your home screen, then tap “Notify me” on your order. Until then this page updates live while it's open.</p>
           ) : (
             <p className="muted">We'll <b>ring your phone</b> when your order is being prepared and when it's <b>ready to collect</b> — even if you close this page.</p>
           )}
@@ -293,7 +293,7 @@ function TopActions({ cartCount, ordersCount, hasOrders, onCart, onOrders }) {
   );
 }
 
-const STATUS_LABEL = { new: 'Received', preparing: 'Preparing', ready: 'Ready!', done: 'Collected', cancelled: 'Cancelled' };
+const STATUS_LABEL = { new: 'Received', preparing: 'Preparing', ready: 'Ready!', done: 'Handed over', cancelled: 'Cancelled' };
 
 function OrdersSheet({ orders, money, onOpen, onClose }) {
   useEffect(() => {
@@ -321,7 +321,7 @@ function OrdersSheet({ orders, money, onOpen, onClose }) {
                   <span className="mo-items">{o.items.map((i) => `${i.qty}× ${i.name}`).join(', ')}</span>
                   <span className="mo-tags">
                     <span className="pill">{STATUS_LABEL[o.status]}</span>
-                    <span className={`pill ${o.paid ? 'st-ready' : 'st-new'}`}>{o.paid ? 'Paid' : 'Unpaid'}</span>
+                    <span className={`pill ${o.paid ? 'st-ready' : 'st-new'}`}>{o.paid ? (o.payMethod === 'cash' ? 'Paid · Cash' : 'Paid · UPI') : 'Unpaid'}</span>
                   </span>
                 </span>
                 <span className="mo-amt">{money(o.total)}</span>
@@ -677,7 +677,7 @@ function CartSheet({ name, cart, items, total, count, money, change, onClose, on
 const STEPS = [['new', 'Received', ReceiptText, 'var(--orange)'], ['preparing', 'Preparing', ChefHat, 'var(--royal)'], ['ready', 'Ready', CircleCheck, 'var(--green)']];
 const STATUS_TEXT = {
   new: "We got your order — it's in the queue", preparing: 'Our team is preparing your food',
-  ready: 'Your order is ready! Please collect it', done: 'Collected — enjoy your food!', cancelled: 'This order was cancelled. Please ask at the counter.',
+  ready: 'Your order is ready! Please collect it', done: 'Handed over — enjoy your food!', cancelled: 'This order was cancelled. Please ask at the counter.',
 };
 
 function Confirmation({ order: o, money, fireConfetti, onAgain, onAllOrders }) {
@@ -760,7 +760,7 @@ function NotifyCard({ o }) {
         {state === 'on' ? (
           <><BellRing size={20} aria-hidden="true" /><span><b>Notifications on.</b> We'll message you when it's preparing and when it's ready.</span></>
         ) : state === 'ios' ? (
-          <><Bell size={20} aria-hidden="true" /><span>On iPhone: tap <b>Share → Add to Home Screen</b>, open Chatore from there, then tap “Notify me”. This screen also updates live.</span></>
+          <><Bell size={20} aria-hidden="true" /><span>On iPhone: tap <b>Share → Add to Home Screen</b>, open Hawres from there, then tap “Notify me”. This screen also updates live.</span></>
         ) : state === 'denied' ? (
           <><Bell size={20} aria-hidden="true" /><span>Notifications are blocked in your browser settings — no problem, this screen updates live.</span></>
         ) : (
@@ -787,7 +787,7 @@ function PayCard({ o, money }) {
     <AnimatePresence mode="wait" initial={false}>
       {o.paid ? (
         <motion.div key="paid" className="paycard paid" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={T.bouncy}>
-          <CircleCheck size={22} aria-hidden="true" /><b>Payment received — thank you!</b>
+          <CircleCheck size={22} aria-hidden="true" /><b>Payment received{o.payMethod === 'cash' ? ' (cash)' : o.payMethod === 'upi' ? ' (UPI)' : ''} — thank you!</b>
         </motion.div>
       ) : (
         <motion.div key="unpaid" className="paycard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.soft}>
