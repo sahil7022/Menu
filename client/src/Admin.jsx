@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate } from 'framer-motion';
 import {
   Bell, BellOff, Check, ChefHat, CircleCheck, ClipboardList, Clock, Download, Lock, LogOut,
-  NotebookPen, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
+  BadgeIndianRupee, NotebookPen, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, Mandala, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
 import './admin.css';
@@ -65,6 +65,12 @@ export default function Admin() {
   useEffect(() => { if (pin && !authed && sessionStorage.getItem('navrang_pin')) load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!authed) return; const t = setInterval(load, 4000); return () => clearInterval(t); }, [authed, load]);
 
+  async function setPaid(o, paid) {
+    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, paid } : x))); // optimistic
+    await api('/api/admin/orders/' + o.id, { method: 'PATCH', body: JSON.stringify({ paid }) }).catch(() => {});
+    load();
+  }
+
   async function setStatus(o, status) {
     if (status === 'cancelled' && !confirm(`Cancel order #${o.no}?`)) return;
     setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; });
@@ -99,6 +105,7 @@ export default function Admin() {
 
   const stats = [
     ['Revenue', <AnimatedNumber key="r" value={live.reduce((s, o) => s + o.total, 0)} format={money} />, Wallet, 'var(--green)', 'var(--green-ink)'],
+    ['Unpaid', <AnimatedNumber key="u" value={live.filter((o) => !o.paid).reduce((s, o) => s + o.total, 0)} format={money} />, BadgeIndianRupee, 'var(--orange)', 'var(--orange-ink)'],
     ['Orders', <AnimatedNumber key="o" value={live.length} />, ReceiptText, 'var(--purple)', 'var(--purple-ink)'],
     ['New', <AnimatedNumber key="n" value={counts.new} />, Bell, 'var(--orange)', 'var(--orange-ink)'],
     ['Preparing', <AnimatedNumber key="p" value={counts.preparing} />, ChefHat, 'var(--royal)', 'var(--royal-ink)'],
@@ -152,7 +159,7 @@ export default function Admin() {
         <motion.div layout className="grid" aria-live="polite">
           <AnimatePresence mode="popLayout">
             {list.map((o) => (
-              <OrderCard key={o.id} o={o} fresh={fresh.has(o.id)} onStatus={setStatus}
+              <OrderCard key={o.id} o={o} fresh={fresh.has(o.id)} onStatus={setStatus} onPaid={setPaid}
                 onSeen={() => setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; })} />
             ))}
             {!list.length && (
@@ -175,7 +182,7 @@ export default function Admin() {
   );
 }
 
-function OrderCard({ o, fresh, onStatus, onSeen }) {
+function OrderCard({ o, fresh, onStatus, onPaid, onSeen }) {
   const nx = NEXT[o.status];
   return (
     <motion.article layout className={`order card st-${o.status} ${fresh ? 'fresh' : ''}`} onClick={fresh ? onSeen : undefined}
@@ -192,7 +199,14 @@ function OrderCard({ o, fresh, onStatus, onSeen }) {
       <ul>{o.items.map((i) => <li key={i.id}><span className="q">{i.qty}×</span><span>{i.name}</span><span className="p">{money(i.price * i.qty)}</span></li>)}</ul>
       {o.note && <div className="note"><NotebookPen size={16} aria-hidden="true" /><span>{o.note}</span></div>}
       <div className="foot">
-        <b>{money(o.total)}</b>
+        <span className="paybox">
+          <b>{money(o.total)}</b>
+          <motion.button key={o.paid ? 'p' : 'u'} className={`paytag ${o.paid ? 'paid' : ''}`} onClick={() => onPaid(o, !o.paid)}
+            aria-label={o.paid ? `Order ${o.no} is paid. Tap to mark unpaid` : `Order ${o.no} is unpaid. Tap to mark paid`}
+            initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={T.bouncy} whileTap={{ scale: 0.9 }}>
+            {o.paid ? <><Check size={14} aria-hidden="true" />Paid</> : <>Unpaid · mark paid</>}
+          </motion.button>
+        </span>
         <span className="time"><Clock size={14} aria-hidden="true" />{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
       <div className="acts">

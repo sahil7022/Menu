@@ -41,6 +41,17 @@ To change the staff password, update `ADMIN_PIN` in Vercel (then redeploy) **and
 - `PUBLIC_URL` – the public address the QR code points to, e.g. `https://navrang-menu.onrender.com` (if unset, the address you opened `/qr` from is used)
 - `PORT` – default `3000`
 
+## UPI payments
+Set your UPI ID in `menu.json` → `"upi": { "id": "yourname@bank", "name": "Shown to payer" }`.
+After ordering, customers get a **Pay ₹X with UPI app** button (GPay/PhonePe/Paytm/BHIM, amount and order number
+pre-filled), a QR code, and your UPI ID to copy. Money goes straight to your account — no gateway, no fees.
+Payments are **not** auto-detected: check your UPI app, then tap **Unpaid · mark paid** on the order in `/admin`;
+the customer's screen turns green. Remove the `upi` block to hide online payment.
+
+## Workers' login
+Tap the stall name on the menu page **5 times quickly** to open the "Poonam's Workers" login,
+or go to `/admin` directly.
+
 ## Edit the menu
 Change `menu.json` and restart. Each item supports:
 `id`, `name`, `price`, `desc` (short description), `veg` (true/false), `popular` (shows a badge),

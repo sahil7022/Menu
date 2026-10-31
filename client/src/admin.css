@@ -63,3 +63,7 @@ header.top h1 { font-size: 2.1rem; display: flex; align-items: center; gap: 10px
   .filters .field { max-width: none; }
   .bar-row { grid-template-columns: 1fr 70px; } .bar-row .track { grid-column: 1 / -1; grid-row: 2; }
 }
+
+.paybox { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.paytag { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 4px 10px; border-radius: var(--r-full); border: 1.5px dashed var(--orange-ink); background: color-mix(in srgb, var(--orange) 8%, #fff); color: var(--orange-ink); font-weight: 800; font-size: .78rem; cursor: pointer; }
+.paytag.paid { border: 1.5px solid transparent; background: color-mix(in srgb, var(--green) 14%, #fff); color: var(--green-ink); }

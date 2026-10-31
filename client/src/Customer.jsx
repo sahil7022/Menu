@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate, useDragControls, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
-  Search, ShoppingBag, Sparkles, User, UtensilsCrossed, Wallet, X,
+  Copy, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, CategoryIcon, Mandala, NINE, T, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
@@ -19,7 +19,14 @@ export default function Customer() {
   const [order, setOrder] = useState(null);
   const [toast, setToast] = useState(null);
   const [confetti, fireConfetti] = useConfetti();
-  const [gate, setGate] = useState(false);       // hidden staff login (tap the stall name)
+  const [gate, setGate] = useState(false);       // hidden workers' login
+  const taps = useRef({ n: 0, t: 0 });
+  const onTitleTap = () => {                     // 5 quick taps on the stall name open it
+    const now = Date.now();
+    taps.current.n = now - taps.current.t < 1500 ? taps.current.n + 1 : 1;
+    taps.current.t = now;
+    if (taps.current.n >= 5) { taps.current.n = 0; setGate(true); }
+  };
 
   const money = useMemo(() => makeMoney(menu?.currency), [menu]);
   const items = useMemo(() => {
@@ -53,7 +60,7 @@ export default function Customer() {
     if (screen !== 'done' || !order || ['done', 'cancelled'].includes(order.status)) return;
     const t = setInterval(async () => {
       const o = await fetchJSON('/api/orders/' + order.id).catch(() => null);
-      if (o && o.status !== order.status) {
+      if (o && (o.status !== order.status || o.paid !== order.paid)) {
         if (o.status === 'ready') navigator.vibrate?.([200, 100, 200]);
         setOrder(o);
       }
@@ -91,7 +98,7 @@ export default function Customer() {
   return (
     <>
       <div className="toran" aria-hidden="true" />
-      <Hero menu={menu} compact={compact} onTitle={() => setGate(true)} />
+      <Hero menu={menu} compact={compact} onTitle={onTitleTap} />
 
       <main className="wrap">
         {!screen && <Skeleton />}
@@ -146,7 +153,7 @@ function Hero({ menu, compact, onTitle }) {
     <motion.header layout className={`hero ${compact ? 'compact' : ''}`} transition={T.soft}>
       {!compact && <><Mandala className="m1" /><Mandala className="m2" reverse /></>}
       <motion.h1 layout="position" className="brand" key={menu?.stallName}>
-        {/* Tapping the stall name opens the staff login */}
+        {/* Tapping the stall name 5 times opens the workers' login */}
         <motion.button type="button" className="title-btn rainbow-text" onClick={onTitle} whileTap={{ scale: 0.96 }}
           variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'}>
           {(menu?.stallName || 'Navrang').split(' ').map((w, i) => <motion.span key={i} className="w" variants={wordV}>{w} </motion.span>)}
@@ -494,6 +501,8 @@ function Confirmation({ order: o, money, fireConfetti, onAgain }) {
         </motion.p>
       </AnimatePresence>
 
+      {!cancelled && o.upi && <PayCard o={o} money={money} />}
+
       <div className="receipt">
         {o.items.map((i) => <div className="r" key={i.id}><span>{i.qty} × {i.name}</span><span>{money(i.price * i.qty)}</span></div>)}
         <div className="r t"><span>Total</span><span>{money(o.total)}</span></div>
@@ -502,5 +511,45 @@ function Confirmation({ order: o, money, fireConfetti, onAgain }) {
       <p className="muted hint"><Clock size={16} aria-hidden="true" />Show this screen at the counter — it updates automatically.</p>
       <motion.button className="btn block" onClick={onAgain} {...press}>Order something else</motion.button>
     </motion.section>
+  );
+}
+
+/* ---------------- UPI payment ---------------- */
+function PayCard({ o, money }) {
+  const [showQr, setShowQr] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const upiId = new URLSearchParams(o.upi.split('?')[1]).get('pa');
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(upiId); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ }
+  };
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {o.paid ? (
+        <motion.div key="paid" className="paycard paid" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={T.bouncy}>
+          <CircleCheck size={22} aria-hidden="true" /><b>Payment received — thank you!</b>
+        </motion.div>
+      ) : (
+        <motion.div key="unpaid" className="paycard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.soft}>
+          <div className="payhead"><Wallet size={20} aria-hidden="true" /><b>Pay {money(o.total)}</b><span className="pill st-new">Unpaid</span></div>
+          <p className="muted paysub">Pay now by UPI, or pay at the counter.</p>
+          <motion.a className="btn block" href={o.upi} {...press}>
+            <Smartphone size={20} aria-hidden="true" />Pay {money(o.total)} with UPI app
+          </motion.a>
+          <p className="apps">GPay · PhonePe · Paytm · BHIM · any UPI app</p>
+          <div className="payrow">
+            <button className="linkbtn" onClick={() => setShowQr(!showQr)} aria-expanded={showQr}><QrCode size={16} aria-hidden="true" />{showQr ? 'Hide QR' : 'Show QR to scan'}</button>
+            <button className="linkbtn" onClick={copy}><Copy size={16} aria-hidden="true" />{copied ? 'Copied!' : upiId}</button>
+          </div>
+          <AnimatePresence initial={false}>
+            {showQr && (
+              <motion.div className="payqr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={T.spring}>
+                <img src={`/api/orders/${o.id}/upi.svg`} alt={`UPI QR code to pay ${money(o.total)}`} width="200" height="200" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <p className="muted paynote">After paying, show this screen at the counter — it turns green once we confirm.</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -17,6 +17,7 @@ create table navrang.orders (
   items jsonb not null,
   total integer not null check (total >= 0),
   status text not null default 'new' check (status in ('new','preparing','ready','done','cancelled')),
+  paid boolean not null default false,
   created_at timestamptz not null default now()
 );
 alter table navrang.config enable row level security;
@@ -27,7 +28,7 @@ alter table navrang.orders enable row level security;
 create function navrang.to_json(o navrang.orders) returns jsonb
 language sql immutable set search_path = '' as $$
   select jsonb_build_object('id', o.id, 'no', o.no, 'name', o.name, 'note', o.note, 'items', o.items,
-    'total', o.total, 'status', o.status, 'createdAt', o.created_at)
+    'total', o.total, 'status', o.status, 'paid', o.paid, 'createdAt', o.created_at)
 $$;
 
 -- True if the PIN is right. Wrong guesses are recorded; after 20 in 10 minutes everything is refused.
@@ -87,6 +88,16 @@ begin
   return navrang.to_json(r);
 end $$;
 
+create function public.navrang_set_paid(p_pin text, p_id text, p_paid boolean)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare r navrang.orders;
+begin
+  if not navrang.pin_ok(p_pin) then return jsonb_build_object('error', 'forbidden'); end if;
+  update navrang.orders set paid = coalesce(p_paid, false) where id = p_id returning * into r;
+  if not found then return jsonb_build_object('error', 'Not found'); end if;
+  return navrang.to_json(r);
+end $$;
+
 create function public.navrang_clear_orders(p_pin text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 begin
@@ -110,7 +121,7 @@ end $$;
 revoke all on function navrang.pin_ok(text) from public, anon, authenticated;
 do $$ declare f text; begin
   foreach f in array array['navrang_create_order(text,text,jsonb)', 'navrang_get_order(text)', 'navrang_list_orders(text)',
-                           'navrang_set_status(text,text,text)', 'navrang_clear_orders(text)', 'navrang_sync_menu(text,jsonb)'] loop
+                           'navrang_set_status(text,text,text)', 'navrang_set_paid(text,text,boolean)', 'navrang_clear_orders(text)', 'navrang_sync_menu(text,jsonb)'] loop
     execute format('revoke all on function public.%s from public, authenticated', f);
     execute format('grant execute on function public.%s to anon', f);
   end loop;
