@@ -50,7 +50,7 @@ export default function StaffGate({ onClose }) {
             initial={{ scale: 0.5, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={T.bouncy}>
             {ok ? <ShieldCheck size={30} aria-hidden="true" /> : <Lock size={28} aria-hidden="true" />}
           </motion.div>
-          <h2 id="gateTitle">{ok ? 'Welcome back!' : 'Staff login'}</h2>
+          <h2 id="gateTitle">{ok ? 'Welcome back!' : "Poonam's Workers"}</h2>
           <p className="muted" style={{ margin: '4px 0 16px' }}>{ok ? 'Opening the orders…' : 'Enter the password to see who ordered what.'}</p>
           <label className="label" htmlFor="gatePw">Password</label>
           <div className="field">

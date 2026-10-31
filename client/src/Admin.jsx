@@ -238,7 +238,7 @@ function Login({ pin, setPin, err, onSubmit }) {
       <motion.form ref={scope} className="card login" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={T.soft}
         onSubmit={(e) => { e.preventDefault(); if (pin) onSubmit(); }}>
         <Mandala style={{ margin: '0 auto -6px', width: 96, height: 96, opacity: 0.9 }} />
-        <h2>Staff login</h2>
+        <h2>Poonam's Workers</h2>
         <p className="muted" style={{ margin: '-6px 0 4px' }}>Enter the password to see orders.</p>
         <label className="sr-only" htmlFor="pin">Password</label>
         <div className="field"><Lock size={20} aria-hidden="true" />
