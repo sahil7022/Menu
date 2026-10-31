@@ -1,4 +1,4 @@
-# Navrang Stall — QR Menu & Orders
+# Chatore (चटोरे) — QR Menu & Orders for the Navrang food stall
 
 A Navratri / Navrang-themed (nine colours) ordering site for a food stall.
 

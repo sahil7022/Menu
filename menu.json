@@ -1,6 +1,7 @@
 {
-  "stallName": "Navrang Food Stall",
-  "tagline": "Nine colours · Nine nights · Endless flavours",
+  "stallName": "Chatore",
+  "stallNameHindi": "चटोरे",
+  "tagline": "Ungliyan chaatte reh jaoge!",
   "currency": "₹",
   "event": {
     "presentedBy": "South Kokan Education Society",
@@ -12,7 +13,7 @@
   },
   "upi": {
     "id": "6362781833@jio",
-    "name": "Navrang Food Stall"
+    "name": "Chatore"
   },
   "categories": [
     {

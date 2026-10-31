@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Download, MapPin, Printer, QrCode, ShoppingBag, Sparkles, UtensilsCrossed } from 'lucide-react';
 import { Embers, Mandala, T, TempleBell, fetchJSON, press } from './ui.jsx';
+import { BrandMark } from './ChatoreLogo.jsx';
 import './qr.css';
 
 const stagger = { show: { transition: { staggerChildren: 0.08 } } };
@@ -11,12 +12,11 @@ export default function QrPoster() {
   const [menu, setMenu] = useState(null);
   const [url, setUrl] = useState('');
   useEffect(() => {
-    document.title = 'Navrang · Scan to order';
+    document.title = 'Chatore · Scan to order';
     fetchJSON('/api/menu').then(setMenu);
     fetchJSON('/api/site-url').then((d) => setUrl(d.url));
   }, []);
   const ev = menu?.event;
-  const [first, ...rest] = (menu?.stallName || 'Navrang').split(' ');
 
   return (
     <div className="qrpage">
@@ -27,11 +27,11 @@ export default function QrPoster() {
         <div className="poster-art" aria-hidden="true" />
         <Mandala className="m1" /><Mandala className="m2" reverse />
         <motion.div className="inner" variants={stagger} initial="hidden" animate="show">
-          {ev?.presentedBy && <motion.p className="p-presents" variants={up}>{ev.presentedBy}<em>presents</em></motion.p>}
+          {ev?.presentedBy && <motion.p className="p-presents" variants={up}>{ev.presentedBy}<em>presents</em><b className="evname">✦ {ev.name} ✦</b></motion.p>}
           <motion.h1 className="p-title" variants={up}>
-            <span className="logo gold-text brand">{first.toLowerCase()}</span>
-            {rest.length > 0 && <span className="sublogo">{rest.join(' ')}</span>}
+            <BrandMark menu={menu} size={110} />
           </motion.h1>
+          {menu?.tagline && <motion.p className="tagline" variants={up}>“{menu.tagline}”</motion.p>}
           {ev?.dates && <motion.div className="ribbon" variants={up}><span>{ev.dates}</span></motion.div>}
           <motion.span className="kicker" variants={up}><Sparkles size={14} aria-hidden="true" />Scan to order</motion.span>
           <motion.div className="frame" initial={{ scale: 0.7, rotate: -8, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ ...T.bouncy, delay: 0.3 }}>

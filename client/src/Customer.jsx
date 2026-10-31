@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
+import { BrandMark } from './ChatoreLogo.jsx';
 import './customer.css';
 
 const LS_NAME = 'navrang_name', LS_ORDER = 'navrang_last_order';
@@ -151,7 +152,6 @@ const wordV = { hidden: { opacity: 0, y: 24, scale: 0.9 }, show: { opacity: 1, y
 
 function Hero({ menu, compact, onTitle }) {
   const ev = menu?.event;
-  const [first, ...rest] = (menu?.stallName || 'Navrang').split(' ');
   return (
     <motion.header layout className={`hero ${compact ? 'compact' : ''}`} transition={T.soft}>
       {!compact && <>
@@ -162,7 +162,7 @@ function Hero({ menu, compact, onTitle }) {
       <AnimatePresence>
         {!compact && ev?.presentedBy && (
           <motion.p className="presents" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            {ev.presentedBy}<em>presents</em>
+            {ev.presentedBy}<em>presents</em><b className="evname">✦ {ev.name} ✦</b>
           </motion.p>
         )}
       </AnimatePresence>
@@ -170,10 +170,14 @@ function Hero({ menu, compact, onTitle }) {
         {/* Tapping the stall name 5 times opens the workers' login */}
         <motion.button type="button" className="title-btn" onClick={onTitle} whileTap={{ scale: 0.97 }}
           variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'}>
-          <motion.span className="logo gold-text brand" variants={wordV}>{first.toLowerCase()}</motion.span>
-          {rest.length > 0 && <motion.span className="sublogo" variants={wordV}>{rest.join(' ')}</motion.span>}
+          <BrandMark menu={menu} size={compact ? 52 : 108} row={compact} variants={wordV} />
         </motion.button>
       </motion.h1>
+      <AnimatePresence>
+        {!compact && menu?.tagline && (
+          <motion.p className="tagline" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.5 } }} exit={{ opacity: 0 }}>“{menu.tagline}”</motion.p>
+        )}
+      </AnimatePresence>
       {ev?.dates && (
         <motion.div layout="position" className="ribbon" initial={{ opacity: 0, scaleX: 0.6 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ ...T.soft, delay: 0.3 }}>
           <span>{ev.dates}</span>

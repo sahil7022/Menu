@@ -145,6 +145,21 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
   background: #fbeedc; color: var(--on-light); font-weight: 800; font-size: .92rem; box-shadow: var(--shadow-md);
 }
 
+/* Chatore brand block */
+.brandmark { display: inline-grid; justify-items: center; gap: 2px; }
+.brandmark-logo { display: block; filter: drop-shadow(0 0 18px rgba(255, 170, 60, .45)); }
+.brandmark-words { display: grid; justify-items: center; }
+.brandmark .logo { font-size: clamp(3.2rem, 15vw, 4.2rem); line-height: .95; }
+.brandmark .hindi { font-size: 1.35rem; line-height: 1.1; color: var(--gold); margin-top: 2px; }
+.brandmark .sublogo { font-family: var(--heading); font-weight: 800; letter-spacing: .32em; text-indent: .32em; text-transform: uppercase; font-size: .78rem; color: var(--ink-2); margin-top: 4px; }
+.brandmark.row { grid-auto-flow: column; align-items: center; gap: 10px; }
+.brandmark.row .brandmark-words { justify-items: start; }
+.brandmark.row .logo { font-size: 2.3rem; }
+.brandmark.row .hindi { display: none; }
+.brandmark.row .sublogo { font-size: .62rem; text-indent: 0; margin-top: 0; }
+.tagline { margin: 8px 0 0; font-family: Georgia, serif; font-style: italic; color: var(--ink); font-size: 1.05rem; text-shadow: 0 0 14px rgba(255, 160, 50, .35); }
+.evname { display: block; margin-top: 2px; font-family: var(--heading); font-weight: 800; letter-spacing: .25em; font-size: .9rem; color: var(--gold); }
+
 /* Floating embers layer */
 .embers { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }  /* behind all content */
 .embers i { position: absolute; bottom: -10px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ffb347 40%, rgba(255, 120, 30, 0) 70%); }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate } from 'framer-motion';
 import {
-  Bell, BellOff, Check, ChefHat, CircleCheck, ClipboardList, Clock, Download, Lock, LogOut,
+  Bell, BellOff, Check, ChefHat, CircleCheck, Clock, Download, Lock, LogOut,
   BadgeIndianRupee, NotebookPen, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
-import { AnimatedNumber, Mandala, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
+import { AnimatedNumber, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
+import ChatoreLogo from './ChatoreLogo.jsx';
 import './admin.css';
 
 const money = makeMoney('₹');
@@ -36,7 +37,7 @@ export default function Admin() {
   const seen = useRef(null);
   const soundRef = useRef(sound); soundRef.current = sound;
 
-  useEffect(() => { document.title = 'Navrang · Orders'; }, []);
+  useEffect(() => { document.title = 'Chatore · Orders'; }, []);
 
   const api = useCallback(async (path, opts = {}) => {
     try {
@@ -55,7 +56,7 @@ export default function Admin() {
       if (n.length) {
         setFresh((f) => new Set([...f, ...n.map((o) => o.id)]));
         if (soundRef.current) beep();
-        document.title = `(${n.length}) New order!`; setTimeout(() => (document.title = 'Navrang · Orders'), 4000);
+        document.title = `(${n.length}) New order!`; setTimeout(() => (document.title = 'Chatore · Orders'), 4000);
       }
     }
     seen.current = new Set(list.map((o) => o.id));
@@ -117,7 +118,7 @@ export default function Admin() {
       <div className="toran" aria-hidden="true" />
       <div className="awrap">
         <header className="top">
-          <h1><span className="hic"><ClipboardList size={24} aria-hidden="true" /></span>Orders
+          <h1><ChatoreLogo size={52} title="Chatore" />Chatore · Orders
             <span className="live"><motion.i animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />Live</span>
           </h1>
           <div className="tools">
@@ -251,7 +252,7 @@ function Login({ pin, setPin, err, onSubmit }) {
       <div className="toran" aria-hidden="true" />
       <motion.form ref={scope} className="card login" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={T.soft}
         onSubmit={(e) => { e.preventDefault(); if (pin) onSubmit(); }}>
-        <Mandala style={{ margin: '0 auto -6px', width: 96, height: 96, opacity: 0.9 }} />
+        <span style={{ display: 'grid', placeItems: 'center' }}><ChatoreLogo size={96} /></span>
         <h2>Poonam's Workers</h2>
         <p className="muted" style={{ margin: '-6px 0 4px' }}>Enter the password to see orders.</p>
         <label className="sr-only" htmlFor="pin">Password</label>

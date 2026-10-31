@@ -1,6 +1,6 @@
 .awrap { max-width: 1280px; margin: 0 auto; padding: 18px 20px 40px; }
 header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; }
-header.top h1 { font-size: 2.1rem; display: flex; align-items: center; gap: 10px; }
+header.top h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 10px; color: var(--gold); }
 .hic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: var(--cta); color: var(--on-light); }
 .live { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font); font-size: .8rem; font-weight: 800; color: var(--green-ink); background: color-mix(in srgb, var(--green) 12%, var(--surface)); padding: 4px 10px; border-radius: var(--r-full); }
 .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
