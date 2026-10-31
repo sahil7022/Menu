@@ -5,7 +5,7 @@ A Navratri / Navrang-themed (nine colours) ordering site for a food stall.
 | Page | Who | What |
 |------|-----|------|
 | `/` | Customers (opened by scanning the QR) | Enter name → pick items → cart with total → place order → get an order number that updates live (Received → Preparing → Ready) |
-| `/admin` | Stall staff (PIN protected) | Live list of who ordered what, with total, time and notes. Buttons to mark Preparing / Ready / Collected / Cancel. Sound on new order, revenue + item-wise totals, CSV export |
+| `/admin` | Stall staff (password protected — or tap the stall name on the menu page) | Live list of who ordered what, with total, time and notes. Buttons to mark Preparing / Ready / Collected / Cancel. Sound on new order, revenue + item-wise totals, CSV export |
 | `/qr` | You | Printable QR poster that opens the menu |
 
 ## Run locally
@@ -29,15 +29,15 @@ Set these environment variables in Vercel:
 The database (`supabase/schema.sql`) does its own checks: prices come from its menu table
 (synced from `menu.json` automatically after each deploy), and staff actions need the PIN.
 20 wrong PINs within 10 minutes locks staff actions for 10 minutes.
-To change the PIN, update `ADMIN_PIN` in Vercel **and** run this in the Supabase SQL editor:
-`update navrang.config set v = encode(extensions.digest('NEWPIN','sha256'),'hex') where k = 'pin_sha256';`
+To change the staff password, update `ADMIN_PIN` in Vercel (then redeploy) **and** run this in the Supabase SQL editor:
+`update navrang.config set v = encode(extensions.digest('NEW PASSWORD','sha256'),'hex') where k = 'pin_sha256';`
 
 ### Render / your own computer
 `npm start` runs `server.js`. Without `SUPABASE_URL` orders go to `data/orders.json`
 (fine for testing; lost on Render's free plan when it sleeps). Set the Supabase variables to make them permanent.
 
 ## Settings (environment variables)
-- `ADMIN_PIN` – staff PIN for `/admin` (default `1234` — **change it**)
+- `ADMIN_PIN` – staff password for `/admin` (default `1234` — **change it**). Staff can also log in by tapping the stall name on the customer page.
 - `PUBLIC_URL` – the public address the QR code points to, e.g. `https://navrang-menu.onrender.com` (if unset, the address you opened `/qr` from is used)
 - `PORT` – default `3000`
 

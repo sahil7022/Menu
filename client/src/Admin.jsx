@@ -42,7 +42,7 @@ export default function Admin() {
     try {
       return await fetchJSON(path, { ...opts, headers: { 'Content-Type': 'application/json', 'X-Admin-Pin': pin } });
     } catch (e) {
-      if (e.status === 401) { sessionStorage.removeItem('navrang_pin'); setAuthed(false); setLoginErr('Wrong PIN, try again'); }
+      if (e.status === 401) { sessionStorage.removeItem('navrang_pin'); setAuthed(false); setLoginErr('Wrong password, try again'); }
       throw e;
     }
   }, [pin]);
@@ -239,10 +239,10 @@ function Login({ pin, setPin, err, onSubmit }) {
         onSubmit={(e) => { e.preventDefault(); if (pin) onSubmit(); }}>
         <Mandala style={{ margin: '0 auto -6px', width: 96, height: 96, opacity: 0.9 }} />
         <h2>Staff login</h2>
-        <p className="muted" style={{ margin: '-6px 0 4px' }}>Enter the stall PIN to see orders.</p>
-        <label className="sr-only" htmlFor="pin">PIN</label>
+        <p className="muted" style={{ margin: '-6px 0 4px' }}>Enter the password to see orders.</p>
+        <label className="sr-only" htmlFor="pin">Password</label>
         <div className="field"><Lock size={20} aria-hidden="true" />
-          <input id="pin" type="password" inputMode="numeric" placeholder="PIN" autoComplete="current-password" autoFocus value={pin} onChange={(e) => setPin(e.target.value)} />
+          <input id="pin" type="password" placeholder="Password" autoComplete="current-password" autoFocus value={pin} onChange={(e) => setPin(e.target.value)} />
         </div>
         <p className="err" role="alert">{err}</p>
         <motion.button className="btn block" {...press}>Open orders</motion.button>

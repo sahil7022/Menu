@@ -5,6 +5,7 @@ import {
   Search, ShoppingBag, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, CategoryIcon, Mandala, NINE, T, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
+import StaffGate from './StaffGate.jsx';
 import './customer.css';
 
 const LS_NAME = 'navrang_name', LS_ORDER = 'navrang_last_order';
@@ -18,6 +19,7 @@ export default function Customer() {
   const [order, setOrder] = useState(null);
   const [toast, setToast] = useState(null);
   const [confetti, fireConfetti] = useConfetti();
+  const [gate, setGate] = useState(false);       // hidden staff login (tap the stall name)
 
   const money = useMemo(() => makeMoney(menu?.currency), [menu]);
   const items = useMemo(() => {
@@ -89,7 +91,7 @@ export default function Customer() {
   return (
     <>
       <div className="toran" aria-hidden="true" />
-      <Hero menu={menu} compact={compact} />
+      <Hero menu={menu} compact={compact} onTitle={() => setGate(true)} />
 
       <main className="wrap">
         {!screen && <Skeleton />}
@@ -129,6 +131,7 @@ export default function Customer() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>{gate && <StaffGate key="gate" onClose={() => setGate(false)} />}</AnimatePresence>
       {confetti}
     </>
   );
@@ -138,12 +141,16 @@ export default function Customer() {
 const wordsV = { show: { transition: { staggerChildren: 0.08 } } };
 const wordV = { hidden: { opacity: 0, y: 24, scale: 0.9 }, show: { opacity: 1, y: 0, scale: 1, transition: T.soft } };
 
-function Hero({ menu, compact }) {
+function Hero({ menu, compact, onTitle }) {
   return (
     <motion.header layout className={`hero ${compact ? 'compact' : ''}`} transition={T.soft}>
       {!compact && <><Mandala className="m1" /><Mandala className="m2" reverse /></>}
-      <motion.h1 layout="position" className="brand rainbow-text" variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'} key={menu?.stallName}>
-        {(menu?.stallName || 'Navrang').split(' ').map((w, i) => <motion.span key={i} className="w" variants={wordV}>{w} </motion.span>)}
+      <motion.h1 layout="position" className="brand" key={menu?.stallName}>
+        {/* Tapping the stall name opens the staff login */}
+        <motion.button type="button" className="title-btn rainbow-text" onClick={onTitle} whileTap={{ scale: 0.96 }}
+          variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'}>
+          {(menu?.stallName || 'Navrang').split(' ').map((w, i) => <motion.span key={i} className="w" variants={wordV}>{w} </motion.span>)}
+        </motion.button>
       </motion.h1>
       <AnimatePresence>
         {!compact && menu?.tagline && (
