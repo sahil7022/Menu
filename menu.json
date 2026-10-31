@@ -17,81 +17,28 @@
   },
   "categories": [
     {
-      "name": "Snacks",
+      "name": "Indo-Chinese",
       "items": [
         {
-          "id": "s1",
-          "name": "Khaman Dhokla",
-          "desc": "Soft, spongy gram-flour cakes with mustard tadka",
-          "price": 40,
-          "veg": true,
-          "popular": true
-        },
-        {
-          "id": "s2",
-          "name": "Fafda Jalebi",
-          "desc": "The Navratri classic — crisp fafda with hot jalebi",
+          "id": "noodles",
+          "name": "Noodles",
+          "desc": "Street-style hakka noodles tossed with veggies & sauces",
           "price": 60,
           "veg": true,
           "popular": true
         },
         {
-          "id": "s3",
-          "name": "Samosa (2 pcs)",
-          "desc": "Spiced potato & peas, served with chutney",
-          "price": 30,
-          "veg": true
-        },
-        {
-          "id": "s4",
-          "name": "Vada Pav",
-          "desc": "Mumbai-style batata vada in a soft pav",
-          "price": 25,
-          "veg": true
-        }
-      ]
-    },
-    {
-      "name": "Chaat",
-      "items": [
-        {
-          "id": "c1",
-          "name": "Pani Puri",
-          "desc": "6 crisp puris with tangy spiced water",
-          "price": 30,
+          "id": "momo",
+          "name": "Momo",
+          "desc": "Steamed momos with fiery red chutney",
+          "price": 60,
           "veg": true,
           "popular": true
         },
         {
-          "id": "c2",
-          "name": "Sev Puri",
-          "desc": "Topped with chutneys, onion and fine sev",
-          "price": 40,
-          "veg": true
-        },
-        {
-          "id": "c3",
-          "name": "Dabeli",
-          "desc": "Kutchi spiced potato, pomegranate & peanuts",
-          "price": 35,
-          "veg": true
-        }
-      ]
-    },
-    {
-      "name": "Sweets",
-      "items": [
-        {
-          "id": "w1",
-          "name": "Gulab Jamun (2 pcs)",
-          "desc": "Warm, syrup-soaked and melt-in-mouth",
-          "price": 40,
-          "veg": true
-        },
-        {
-          "id": "w2",
-          "name": "Malpua",
-          "desc": "Festive pancakes dipped in saffron syrup",
+          "id": "soya-manchurian",
+          "name": "Soyabean Manchurian",
+          "desc": "Crispy soya chunks in tangy manchurian gravy",
           "price": 50,
           "veg": true
         }
@@ -101,25 +48,10 @@
       "name": "Drinks",
       "items": [
         {
-          "id": "d1",
-          "name": "Masala Chaas",
-          "desc": "Chilled spiced buttermilk",
-          "price": 20,
-          "veg": true
-        },
-        {
-          "id": "d2",
-          "name": "Masala Chai",
-          "desc": "Kadak ginger-cardamom tea",
+          "id": "tea",
+          "name": "Tea",
+          "desc": "Hot kadak chai",
           "price": 15,
-          "veg": true,
-          "popular": true
-        },
-        {
-          "id": "d3",
-          "name": "Lemon Soda",
-          "desc": "Fizzy, sweet & salty nimbu soda",
-          "price": 30,
           "veg": true
         }
       ]

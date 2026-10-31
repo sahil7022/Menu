@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate } from 'framer-motion';
 import {
   Bell, BellOff, Check, ChefHat, CircleCheck, Clock, Download, Lock, LogOut,
-  BadgeIndianRupee, BellRing, NotebookPen, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
+  BadgeIndianRupee, BellRing, NotebookPen, Pencil, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
 import ChatoreLogo from './ChatoreLogo.jsx';
@@ -136,6 +136,7 @@ export default function Admin() {
         </header>
 
         <MoneyPanel live={live} expenses={expenses} api={api} setExpenses={setExpenses} />
+        <MenuEditor api={api} />
 
         <motion.div className="stats" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
           {stats.map(([l, v, I, c, ci]) => (
@@ -406,6 +407,112 @@ function ResetDialog({ api, onClose, onDone }) {
           <div className="modal-acts">
             <motion.button type="button" className="btn small ghost" onClick={onClose} {...press}>Cancel</motion.button>
             <motion.button className="btn small danger-solid" disabled={!ok || busy} {...press}><Trash2 size={18} aria-hidden="true" />{busy ? 'Resetting…' : 'Reset now'}</motion.button>
+          </div>
+        </motion.form>
+      </div>
+    </>
+  );
+}
+
+/* ---------------- Menu editor (Poonam's Workers can add / edit dishes) ---------------- */
+const BLANK = { id: '', name: '', price: '', category: '', desc: '', veg: true, popular: false, available: true };
+
+function MenuEditor({ api }) {
+  const [cats, setCats] = useState([]);
+  const [editing, setEditing] = useState(null);   // item being added/edited
+  const [open, setOpen] = useState(true);
+  const load = useCallback(async () => { const m = await fetchJSON('/api/menu').catch(() => null); if (m) setCats(m.categories); }, []);
+  useEffect(() => { load(); }, [load]);
+  useLive((ev) => { if (!ev.kind || ['menu', 'timer', 'visible'].includes(ev.kind)) load(); }, 20000);
+  const count = cats.reduce((n, c) => n + c.items.length, 0);
+
+  async function toggle(it, cat) {
+    setCats((cs) => cs.map((c) => ({ ...c, items: c.items.map((x) => (x.id === it.id ? { ...x, available: !x.available } : x)) })));
+    const r = await api('/api/admin/menu', { method: 'POST', body: JSON.stringify({ ...it, category: cat, available: !it.available }) }).catch(() => null);
+    if (r) setCats(r);
+  }
+  async function remove(it) {
+    if (!confirm(`Delete "${it.name}" from the menu?`)) return;
+    const r = await api('/api/admin/menu/' + it.id, { method: 'DELETE' }).catch(() => null);
+    if (r) setCats(r);
+  }
+
+  return (
+    <section className="menued card" aria-labelledby="menuh">
+      <div className="money-head">
+        <h3 id="menuh"><button className="linkbtn" style={{ font: 'inherit', color: 'inherit', padding: 0 }} onClick={() => setOpen(!open)} aria-expanded={open}>Menu ({count}) {open ? '▾' : '▸'}</button></h3>
+        <motion.button className="btn small" onClick={() => setEditing({ ...BLANK, category: cats[0]?.name || '' })} {...press}><Plus size={18} aria-hidden="true" />Add dish</motion.button>
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
+            {cats.map((c, ci) => (
+              <div key={c.name} className="mcat" style={{ '--c': NINE[ci % 9][0], '--ci': NINE[ci % 9][1] }}>
+                <h4>{c.name}</h4>
+                <AnimatePresence initial={false}>
+                  {c.items.map((it) => (
+                    <motion.div key={it.id} layout className={`mrow ${it.available ? '' : 'off'}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                      <span className="mname"><b>{it.name}</b>{it.popular && <em> · Popular</em>}{it.desc && <small>{it.desc}</small>}</span>
+                      <span className="mprice">{money(it.price)}</span>
+                      <button className={`avail ${it.available ? 'on' : ''}`} onClick={() => toggle(it, c.name)} role="switch" aria-checked={it.available}
+                        aria-label={`${it.name} ${it.available ? 'available' : 'sold out'}`}>{it.available ? 'Available' : 'Sold out'}</button>
+                      <button className="iconbtn small" onClick={() => setEditing({ ...it, category: c.name })} aria-label={`Edit ${it.name}`}><Pencil size={16} aria-hidden="true" /></button>
+                      <button className="iconbtn small" onClick={() => remove(it)} aria-label={`Delete ${it.name}`}><Trash2 size={16} aria-hidden="true" /></button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            ))}
+            {!cats.length && <p className="muted">No dishes yet — tap “Add dish”.</p>}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {editing && <ItemDialog key="ed" item={editing} cats={cats.map((c) => c.name)} api={api} onClose={() => setEditing(null)} onSaved={(r) => { setCats(r); setEditing(null); }} />}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+function ItemDialog({ item, cats, api, onClose, onSaved }) {
+  const [f, setF] = useState({ ...item, price: String(item.price ?? '') });
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
+  useEffect(() => { const k = (e) => e.key === 'Escape' && onClose(); addEventListener('keydown', k); return () => removeEventListener('keydown', k); }, [onClose]);
+  async function save(e) {
+    e.preventDefault(); setErr('');
+    if (!f.name.trim()) return setErr('Enter the dish name');
+    if (!(Number(f.price) >= 0) || f.price === '') return setErr('Enter the price');
+    setBusy(true);
+    try { onSaved(await api('/api/admin/menu', { method: 'POST', body: JSON.stringify({ ...f, price: Math.round(Number(f.price)), category: f.category.trim() || 'Menu' }) })); }
+    catch (e2) { setErr(e2.message || 'Could not save'); setBusy(false); }
+  }
+  return (
+    <>
+      <motion.div className="modal-bg" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+      <div className="modal-wrap">
+        <motion.form className="modal card" onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="itemTitle"
+          initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.spring}>
+          <h3 id="itemTitle" style={{ color: 'var(--gold)' }}>{item.id ? 'Edit dish' : 'Add a dish'}</h3>
+          <label className="label" htmlFor="itName">Name</label>
+          <input id="itName" value={f.name} onChange={set('name')} maxLength={60} placeholder="e.g. Veg Fried Rice" autoFocus />
+          <div className="two">
+            <span><label className="label" htmlFor="itPrice">Price (₹)</label>
+              <input id="itPrice" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="60" /></span>
+            <span><label className="label" htmlFor="itCat">Category</label>
+              <input id="itCat" value={f.category} onChange={set('category')} list="catlist" maxLength={30} placeholder="e.g. Drinks" />
+              <datalist id="catlist">{cats.map((c) => <option key={c} value={c} />)}</datalist></span>
+          </div>
+          <label className="label" htmlFor="itDesc">Short description (optional)</label>
+          <input id="itDesc" value={f.desc || ''} onChange={set('desc')} maxLength={140} placeholder="e.g. Spicy, served hot" />
+          <label className="check"><input type="checkbox" checked={!!f.veg} onChange={set('veg')} />Vegetarian</label>
+          <label className="check"><input type="checkbox" checked={!!f.popular} onChange={set('popular')} />Show “Popular” badge</label>
+          <label className="check"><input type="checkbox" checked={!!f.available} onChange={set('available')} />Available (untick = sold out)</label>
+          <p className="err" role="alert">{err}</p>
+          <div className="modal-acts">
+            <motion.button type="button" className="btn small ghost" onClick={onClose} {...press}>Cancel</motion.button>
+            <motion.button className="btn small" disabled={busy} {...press}><Check size={18} aria-hidden="true" />{busy ? 'Saving…' : 'Save dish'}</motion.button>
           </div>
         </motion.form>
       </div>

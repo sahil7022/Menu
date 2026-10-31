@@ -69,9 +69,12 @@ Tap the stall name on the menu page **5 times quickly** to open the "Poonam's Wo
 or go to `/admin` directly.
 
 ## Edit the menu
-Change `menu.json` and restart. Each item supports:
-`id`, `name`, `price`, `desc` (short description), `veg` (true/false), `popular` (shows a badge),
-and optional `image` (a URL or a file you put in `public/`, e.g. `"image": "/img/dhokla.jpg"`).
+Poonam's Workers edit the menu on the orders page → **Menu** → *Add dish* / ✏️ edit / *Available ⇄ Sold out* / 🗑.
+Customers' screens update by themselves. (`menu.json` still holds the stall name, event details and UPI ID.)
+
+## Printing the QR
+`print/chatore-qr-poster.png` (full poster) and `print/chatore-qr.png` (plain QR) both open https://navrang-menu.vercel.app.
+Opening the site shows a splash screen (Chatore logo + fireworks) once per visit.
 
 ## Tech & design
 - **React + Vite** frontend in `client/`, **Framer Motion** for every animation

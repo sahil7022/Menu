@@ -1,7 +1,7 @@
 // Shared bits: motion tokens, palette, animated number, confetti, buttons.
 import { useCallback, useEffect, useState } from 'react';
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
-import { CakeSlice, CupSoda, Flame, Cookie, UtensilsCrossed } from 'lucide-react';
+import { CakeSlice, Coffee, CupSoda, Flame, Cookie, Soup, UtensilsCrossed } from 'lucide-react';
 
 // Motion tokens — one place for timing, chosen per purpose (not one duration everywhere).
 export const T = {
@@ -24,7 +24,9 @@ const CONFETTI = ['#f97316', '#e11d48', '#2563eb', '#f5b700', '#16a34a', '#9333e
 
 export function CategoryIcon({ name, size = 20 }) {
   const n = name.toLowerCase();
-  const I = /drink|bev|chai|tea|juice|soda|lassi/.test(n) ? CupSoda
+  const I = /^(tea|chai|coffee)\b|hot drink/.test(n) ? Coffee
+    : /drink|bev|juice|soda|lassi/.test(n) ? CupSoda
+    : /chinese|noodle|momo|manchurian|soup|maggi/.test(n) ? Soup
     : /sweet|dessert|mithai/.test(n) ? CakeSlice
     : /chaat|spicy|street/.test(n) ? Flame
     : /snack|starter|farsan/.test(n) ? Cookie : UtensilsCrossed;
@@ -74,13 +76,14 @@ export function useConfetti() {
   return [node, fire];
 }
 
-// Spinning rangoli circle that blooms in.
+// Spinning golden mandala that blooms in (spin is CSS so it stays smooth while scrolling).
 export function Mandala({ className, style, reverse }) {
+  const { opacity = 0.28, ...rest } = style || {};
   return (
-    <motion.div className={`mandala ${className || ''}`} style={style} aria-hidden="true"
-      initial={{ scale: 0.3, opacity: 0 }}
-      animate={{ scale: 1, opacity: style?.opacity ?? 0.28, rotate: reverse ? -360 : 360 }}
-      transition={{ scale: { duration: 1.2, ease: [0.2, 0.7, 0.3, 1] }, opacity: { duration: 1 }, rotate: { duration: 60, repeat: Infinity, ease: 'linear' } }} />
+    <motion.div className={className} style={{ position: 'absolute', ...rest }} aria-hidden="true"
+      initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity }} transition={{ duration: 1.2, ease: [0.2, 0.7, 0.3, 1] }}>
+      <div className={`mandala spin ${reverse ? 'rev' : ''}`} style={{ width: '100%', height: '100%' }} />
+    </motion.div>
   );
 }
 
@@ -91,10 +94,11 @@ export async function fetchJSON(url, opts) {
   return data;
 }
 
-// Glowing embers drifting up behind the page (like the poster's sparks).
+// Glowing embers drifting up behind the page (pure CSS animation — smooth while scrolling).
 export function Embers({ count = 22 }) {
   const reduce = useReducedMotion();
-  const [sparks] = useState(() => Array.from({ length: count }, (_, i) => ({
+  const n = typeof window !== 'undefined' && window.innerWidth < 600 ? Math.round(count * 0.55) : count;
+  const [sparks] = useState(() => Array.from({ length: n }, (_, i) => ({
     i, left: Math.random() * 100, size: 3 + Math.random() * 5, dur: 7 + Math.random() * 9,
     delay: -Math.random() * 16, drift: (Math.random() - 0.5) * 80, peak: 0.5 + Math.random() * 0.5,
   })));
@@ -102,9 +106,7 @@ export function Embers({ count = 22 }) {
   return (
     <div className="embers" aria-hidden="true">
       {sparks.map((s) => (
-        <motion.i key={s.i} style={{ left: `${s.left}%`, width: s.size, height: s.size }}
-          animate={{ y: [0, -window.innerHeight - 40], x: [0, s.drift], opacity: [0, s.peak, s.peak, 0] }}
-          transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: 'linear', times: [0, 0.15, 0.8, 1] }} />
+        <i key={s.i} style={{ left: `${s.left}%`, width: s.size, height: s.size, '--d': `${s.dur}s`, '--delay': `${s.delay}s`, '--dx': `${s.drift}px`, '--peak': s.peak }} />
       ))}
     </div>
   );
@@ -113,8 +115,7 @@ export function Embers({ count = 22 }) {
 // Gold temple bell hanging on a chain, gently swinging.
 export function TempleBell({ side = 'left', chain = 60, delay = 0 }) {
   return (
-    <motion.div className={`bell bell-${side}`} aria-hidden="true" style={{ transformOrigin: 'top center' }}
-      initial={{ rotate: 0 }} animate={{ rotate: [6, -6, 6] }} transition={{ duration: 3.2, delay, repeat: Infinity, ease: 'easeInOut' }}>
+    <div className={`bell bell-${side} swing`} aria-hidden="true" style={{ animationDelay: `${delay}s` }}>
       <span className="chain" style={{ height: chain }} />
       <svg width="34" height="40" viewBox="0 0 34 40">
         <defs>
@@ -126,6 +127,6 @@ export function TempleBell({ side = 'left', chain = 60, delay = 0 }) {
         <path d="M17 7c-7 0-10 6-10 13v8l-4 5h28l-4-5v-8c0-7-3-13-10-13z" fill={`url(#bg-${side})`} />
         <circle cx="17" cy="36" r="3" fill="#ffcf6b" />
       </svg>
-    </motion.div>
+    </div>
   );
 }

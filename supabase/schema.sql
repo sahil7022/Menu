@@ -129,3 +129,35 @@ end $$;
 
 -- Set your staff PIN here (replace 123456), then use the same value for ADMIN_PIN in Vercel:
 insert into navrang.config values ('pin_sha256', encode(extensions.digest('123456', 'sha256'), 'hex'));
+
+-- ============ Additions: investment, notifications, reset, editable menu ============
+create table navrang.expenses (
+  id bigint generated always as identity primary key,
+  label text not null check (length(label) between 1 and 60),
+  amount integer not null check (amount > 0 and amount <= 10000000),
+  created_at timestamptz not null default now()
+);
+create table navrang.push_subs (
+  endpoint text primary key, sub jsonb not null,
+  role text not null check (role in ('customer','worker')),
+  order_ids text[] not null default '{}', created_at timestamptz not null default now()
+);
+alter table navrang.expenses enable row level security;
+alter table navrang.push_subs enable row level security;
+
+alter table navrang.menu_items
+  add column category text not null default 'Menu' check (length(category) between 1 and 30),
+  add column description text not null default '' check (length(description) <= 140),
+  add column veg boolean not null default true, add column popular boolean not null default false,
+  add column available boolean not null default true, add column sort integer not null default 0,
+  add column created_at timestamptz not null default now();
+drop function public.navrang_sync_menu(text, jsonb);   -- workers edit the menu in the app now
+delete from navrang.menu_items;
+insert into navrang.menu_items (id, name, price, category, description, veg, popular, sort) values
+  ('noodles', 'Noodles', 60, 'Indo-Chinese', 'Street-style hakka noodles tossed with veggies & sauces', true, true, 1),
+  ('momo', 'Momo', 60, 'Indo-Chinese', 'Steamed momos with fiery red chutney', true, true, 2),
+  ('soya-manchurian', 'Soyabean Manchurian', 50, 'Indo-Chinese', 'Crispy soya chunks in tangy manchurian gravy', true, false, 3),
+  ('tea', 'Tea', 15, 'Drinks', 'Hot kadak chai', true, false, 10);
+
+-- The full function bodies for expenses, push subscriptions, push keys, reset and menu editing are in the
+-- project's Supabase migrations (navrang_expenses_push_reset, navrang_reset_use_delete, navrang_editable_menu).

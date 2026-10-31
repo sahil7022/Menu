@@ -50,12 +50,16 @@ html, body { margin: 0; }
 html { scroll-padding-top: 170px; background: var(--bg); }
 body {
   font-family: var(--font); font-size: 16px; line-height: 1.5; color: var(--ink);
+  background: var(--bg); min-height: 100dvh; -webkit-font-smoothing: antialiased;
+}
+/* fixed glow layer: painted once, never repainted while scrolling */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; transform: translateZ(0);
   background:
     radial-gradient(60rem 32rem at 50% -8%, rgba(255, 150, 40, .22), transparent 60%),
     radial-gradient(40rem 30rem at 110% 30%, rgba(225, 29, 72, .10), transparent 60%),
     radial-gradient(40rem 30rem at -10% 80%, rgba(59, 108, 246, .12), transparent 60%),
     linear-gradient(180deg, var(--bg-2), var(--bg) 40%);
-  background-attachment: fixed; min-height: 100dvh; -webkit-font-smoothing: antialiased;
 }
 h1, h2, h3 { font-family: var(--heading); font-weight: 700; line-height: 1.15; margin: 0; letter-spacing: .02em; }
 button { font: inherit; color: inherit; }
@@ -122,7 +126,6 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
 .card {
   background: linear-gradient(180deg, rgba(29, 35, 80, .92), rgba(21, 26, 61, .92));
   border-radius: var(--r-md); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
 .muted { color: var(--ink-2); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -162,7 +165,18 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
 
 /* Floating embers layer */
 .embers { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }  /* behind all content */
-.embers i { position: absolute; bottom: -10px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ffb347 40%, rgba(255, 120, 30, 0) 70%); }
+.embers i { position: absolute; bottom: -10px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ffb347 40%, rgba(255, 120, 30, 0) 70%);
+  opacity: 0; will-change: transform, opacity; animation: ember var(--d) linear var(--delay) infinite; }
+@keyframes ember {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  15% { opacity: var(--peak); }
+  80% { opacity: var(--peak); }
+  100% { transform: translate3d(var(--dx), -105vh, 0); opacity: 0; }
+}
+.spin { animation: spin 60s linear infinite; } .spin.rev { animation-direction: reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.swing { animation: swing 3.2s ease-in-out infinite; transform-origin: top center; }
+@keyframes swing { 0%, 100% { transform: rotate(6deg); } 50% { transform: rotate(-6deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

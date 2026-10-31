@@ -7,7 +7,7 @@
 /* faint dancers behind the QR, like the poster */
 .poster-art { position: absolute; inset: 200px 0 auto; height: 420px; background: url(/dancers.webp) center 40% / cover no-repeat; opacity: .22;
   -webkit-mask: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 100%); mask: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 100%); }
-.poster .mandala { position: absolute; width: 220px; height: 220px; }
+.poster .m1, .poster .m2 { width: 220px; height: 220px; }
 .poster .m1 { left: -90px; top: 260px; } .poster .m2 { right: -90px; bottom: 120px; }
 .poster .inner { position: relative; padding: 30px 26px 28px; }
 .p-presents { margin: 0 0 2px; font-family: var(--heading); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; color: var(--gold); }

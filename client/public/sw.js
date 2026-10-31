@@ -11,7 +11,9 @@ self.addEventListener('push', (event) => {
     badge: '/icon-192.png',
     tag: data.tag,
     renotify: true,
-    vibrate: [200, 100, 200],
+    silent: false,                                   // play the phone's notification sound
+    requireInteraction: !!data.important,            // "ready" / "new order" stay until tapped
+    vibrate: data.important ? [400, 150, 400, 150, 400] : [200, 100, 200],
     data: { url: data.url || '/' },
   }));
 });

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
+import Splash from './Splash.jsx';
 import { BrandMark } from './ChatoreLogo.jsx';
 import { enablePush, pushState, useLive } from './live.js';
 import './customer.css';
@@ -31,6 +32,8 @@ export default function Customer() {
   const [toast, setToast] = useState(null);
   const [confetti, fireConfetti] = useConfetti();
   const [gate, setGate] = useState(false);       // hidden workers' login
+  const [splash, setSplash] = useState(() => !sessionStorage.getItem('chatore_splash'));   // once per visit
+  const [askNotify, setAskNotify] = useState(null); // order id to ask about notifications
   const taps = useRef({ n: 0, t: 0 });
   const onTitleTap = () => {                     // 5 quick taps on the stall name open it
     const now = Date.now();
@@ -63,15 +66,27 @@ export default function Customer() {
     for (const o of list) {
       const p = prev.current[o.id];
       if (p && p.status !== o.status) {
-        if (o.status === 'ready') { navigator.vibrate?.([200, 100, 200]); showToast(`Order #${o.no} is ready — collect it!`); }
-        else if (o.status === 'preparing') showToast(`Order #${o.no} is being prepared`);
+        if (o.status === 'ready') { navigator.vibrate?.([300, 120, 300, 120, 300]); chime(3); showToast(`Order #${o.no} is ready — collect it!`); }
+        else if (o.status === 'preparing') { chime(1); showToast(`Order #${o.no} is being prepared`); }
       }
-      if (p && !p.paid && o.paid) showToast(`Payment received for #${o.no}`);
+      if (p && !p.paid && o.paid) { chime(1); showToast(`Payment received for #${o.no}`); }
     }
     prev.current = next;
     setMyOrders(next);
   };
   useLive(refresh, 5000, myIds.length > 0);
+  // the menu can change while customers browse (new dishes, prices, sold out)
+  useLive(async (ev) => {
+    if (ev.kind && !['menu', 'visible', 'timer'].includes(ev.kind)) return;
+    const m = await fetchJSON('/api/menu').catch(() => null);
+    if (m) setMenu(m);
+  }, 15000, !!menu);
+  // drop cart items that sold out or were removed
+  useEffect(() => {
+    if (!menu) return;
+    const ok = new Set(menu.categories.flatMap((c) => c.items.filter((i) => i.available).map((i) => i.id)));
+    setCart((c) => { const gone = Object.keys(c).filter((id) => !ok.has(id)); if (!gone.length) return c; const n = { ...c }; gone.forEach((id) => delete n[id]); return n; });
+  }, [menu]);
   useEffect(() => { refresh(); }, [myIds.join()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load menu; open an order from a notification link (?order=…) or resume the latest unfinished one
@@ -123,6 +138,8 @@ export default function Customer() {
     // already allowed notifications before? follow this order too, silently
     if (pushState() === 'ok' && localStorage.getItem(LS_PUSHED)) {
       enablePush(`/api/orders/${o.id}/push`).then(() => markPushed(o.id)).catch(() => {});
+    } else if (pushState() !== 'denied' && pushState() !== 'unsupported') {
+      setTimeout(() => setAskNotify(o.id), 1600);   // after the confetti
     }
   }
 
@@ -151,7 +168,7 @@ export default function Customer() {
           )}
           {screen === 'menu' && menu && (
             <MenuScreen key="menu" menu={menu} name={name} cart={cart} change={change} money={money}
-              onChangeName={() => setScreen('name')} />
+              onChangeName={() => setScreen('name')} ordersCount={activeCount} hasOrders={mine.length > 0} onOrders={() => setOrdersSheet(true)} />
           )}
           {screen === 'done' && viewed && (
             <Confirmation key={'done-' + viewed.id} order={viewed} money={money} fireConfetti={fireConfetti}
@@ -186,7 +203,68 @@ export default function Customer() {
         )}
       </AnimatePresence>
       <AnimatePresence>{gate && <StaffGate key="gate" onClose={() => setGate(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {askNotify && <NotifyPrompt key="ask" orderId={askNotify} onClose={() => setAskNotify(null)} onOn={() => { markPushed(askNotify); setAskNotify(null); showToast('Notifications on — we\'ll ring when it\'s ready'); }} />}
+      </AnimatePresence>
       {confetti}
+      <AnimatePresence>
+        {splash && <Splash key="splash" menu={menu} onDone={() => { sessionStorage.setItem('chatore_splash', '1'); setSplash(false); }} />}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// Short "ding" when something changes while the page is open
+let audioCtx;
+function chime(times = 1) {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    for (let k = 0; k < times; k++) {
+      [988, 1319].forEach((f, i) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+        const t = audioCtx.currentTime + k * 0.45 + i * 0.12;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+        o.start(t); o.stop(t + 0.42);
+      });
+    }
+  } catch { /* no audio */ }
+}
+
+/* Big, friendly prompt right after ordering */
+function NotifyPrompt({ orderId, onClose, onOn }) {
+  const ios = pushState() === 'ios-install';
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function on() {
+    setBusy(true); setErr('');
+    try { await enablePush(`/api/orders/${orderId}/push`); onOn(); }
+    catch (e) { setBusy(false); if (e.code === 'denied') onClose(); else setErr('Could not turn on — you can try again from the order screen.'); }
+  }
+  return (
+    <>
+      <motion.div className="sheet-bg" style={{ zIndex: 40 }} onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+      <div className="gate-wrap">
+        <motion.div className="gate card notify-ask" role="dialog" aria-modal="true" aria-labelledby="askTitle"
+          initial={{ opacity: 0, scale: 0.85, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={T.spring}>
+          <motion.div className="bellbig" animate={{ rotate: [0, -16, 14, -10, 8, 0] }} transition={{ duration: 1, repeat: Infinity, repeatDelay: 1.2 }}>
+            <BellRing size={36} aria-hidden="true" />
+          </motion.div>
+          <h2 id="askTitle">Turn on notifications</h2>
+          {ios ? (
+            <p className="muted">On iPhone: tap <b>Share</b> <span aria-hidden="true">⎋</span> → <b>Add to Home Screen</b>, open <b>Chatore</b> from your home screen, then tap “Notify me” on your order. Until then this page updates live while it's open.</p>
+          ) : (
+            <p className="muted">We'll <b>ring your phone</b> when your order is being prepared and when it's <b>ready to collect</b> — even if you close this page.</p>
+          )}
+          {err && <p className="err" role="alert">{err}</p>}
+          {!ios && (
+            <motion.button className="btn block" onClick={on} disabled={busy} {...press}>
+              {busy ? <span className="spinner" /> : <BellRing size={20} aria-hidden="true" />}Turn on notifications
+            </motion.button>
+          )}
+          <button className="linkbtn" onClick={onClose} style={{ width: '100%' }}>{ios ? 'Got it' : 'Not now'}</button>
+        </motion.div>
+      </div>
     </>
   );
 }
@@ -364,7 +442,7 @@ function NameScreen({ initial, onDone }) {
 }
 
 /* ---------------- Menu ---------------- */
-function MenuScreen({ menu, name, cart, change, money, onChangeName }) {
+function MenuScreen({ menu, name, cart, change, money, onChangeName, ordersCount, hasOrders, onOrders }) {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
   const [scrolled, setScrolled] = useState(false);
@@ -372,14 +450,16 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName }) {
   const tabsRef = useRef();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(scrollY > 120);
+    let ticking = false;
+    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { setScrolled(scrollY > 120); ticking = false; }); };
     addEventListener('scroll', onScroll, { passive: true });
     const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && setActive(+e.target.dataset.i)), { rootMargin: '-45% 0px -50% 0px' });
     document.querySelectorAll('section.cat').forEach((s) => io.observe(s));
     return () => { removeEventListener('scroll', onScroll); io.disconnect(); };
   }, [q]);
   useEffect(() => {
-    tabsRef.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    const strip = tabsRef.current, tab = strip?.querySelector(`[data-i="${active}"]`);
+    if (strip && tab) strip.scrollTo({ left: tab.offsetLeft - strip.clientWidth / 2 + tab.clientWidth / 2, behavior: reduce ? 'auto' : 'smooth' });
   }, [active, reduce]);
 
   const needle = q.trim().toLowerCase();
@@ -394,7 +474,10 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName }) {
       <div className={`bar ${scrolled ? 'scrolled' : ''}`}>
         <div className="greet">
           <span>Hi <b>{name}</b></span>
-          <button className="linkbtn" onClick={onChangeName}>Change name</button>
+          <span style={{ display: 'flex', gap: 14 }}>
+            {hasOrders && <button className="linkbtn ordlink" onClick={onOrders}><ReceiptText size={16} aria-hidden="true" />My orders{ordersCount > 0 && <b>{ordersCount}</b>}</button>}
+            <button className="linkbtn" onClick={onChangeName}>Change name</button>
+          </span>
         </div>
         <div className="field">
           <Search size={20} aria-hidden="true" />
@@ -447,10 +530,10 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName }) {
 
 function ItemCard({ it, cat, qty, change, money }) {
   return (
-    <motion.article layout className={`item card ${qty ? 'in-cart' : ''}`}
-      initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }}
+    <motion.article className={`item card ${qty ? 'in-cart' : ''} ${it.available === false ? 'is-soldout' : ''}`}
+      initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-      whileHover={{ y: -3, boxShadow: 'var(--shadow-md)' }} transition={T.soft}>
+      whileHover={{ y: -3 }} transition={T.soft}>
       <motion.div className="thumb" whileHover={{ scale: 1.06, rotate: -3 }} transition={T.spring}>
         {it.image ? <motion.img src={it.image} alt="" loading="lazy" initial={{ scale: 1.2, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} />
           : <CategoryIcon name={cat} size={30} />}
@@ -464,7 +547,7 @@ function ItemCard({ it, cat, qty, change, money }) {
         {it.desc ? <p className="desc">{it.desc}</p> : <div style={{ height: 8 }} />}
         <div className="row">
           <span className="price">{money(it.price)}</span>
-          <QtyControl id={it.id} name={it.name} qty={qty} change={change} />
+          {it.available === false ? <span className="soldout">Sold out</span> : <QtyControl id={it.id} name={it.name} qty={qty} change={change} />}
         </div>
       </div>
     </motion.article>
