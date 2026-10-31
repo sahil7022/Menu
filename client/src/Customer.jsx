@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate, useDragControls, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
-  Copy, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
+  Copy, MapPin, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
-import { AnimatedNumber, CategoryIcon, Mandala, NINE, T, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
+import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
 import './customer.css';
 
@@ -93,10 +93,11 @@ export default function Customer() {
     setSheet(false); setCart({}); setOrder(o); setScreen('done');
   }
 
-  const compact = screen === 'menu';
+  const compact = screen === 'menu' || screen === 'done';
 
   return (
     <>
+      <Embers />
       <div className="toran" aria-hidden="true" />
       <Hero menu={menu} compact={compact} onTitle={onTitleTap} />
 
@@ -149,19 +150,48 @@ const wordsV = { show: { transition: { staggerChildren: 0.08 } } };
 const wordV = { hidden: { opacity: 0, y: 24, scale: 0.9 }, show: { opacity: 1, y: 0, scale: 1, transition: T.soft } };
 
 function Hero({ menu, compact, onTitle }) {
+  const ev = menu?.event;
+  const [first, ...rest] = (menu?.stallName || 'Navrang').split(' ');
   return (
     <motion.header layout className={`hero ${compact ? 'compact' : ''}`} transition={T.soft}>
-      {!compact && <><Mandala className="m1" /><Mandala className="m2" reverse /></>}
-      <motion.h1 layout="position" className="brand" key={menu?.stallName}>
+      {!compact && <>
+        <TempleBell side="left" chain={34} />
+        <TempleBell side="right" chain={58} delay={0.8} />
+        <Mandala className="m1" /><Mandala className="m2" reverse />
+      </>}
+      <AnimatePresence>
+        {!compact && ev?.presentedBy && (
+          <motion.p className="presents" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {ev.presentedBy}<em>presents</em>
+          </motion.p>
+        )}
+      </AnimatePresence>
+      <motion.h1 layout="position" className="hero-title" key={menu?.stallName}>
         {/* Tapping the stall name 5 times opens the workers' login */}
-        <motion.button type="button" className="title-btn rainbow-text" onClick={onTitle} whileTap={{ scale: 0.96 }}
+        <motion.button type="button" className="title-btn" onClick={onTitle} whileTap={{ scale: 0.97 }}
           variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'}>
-          {(menu?.stallName || 'Navrang').split(' ').map((w, i) => <motion.span key={i} className="w" variants={wordV}>{w} </motion.span>)}
+          <motion.span className="logo gold-text brand" variants={wordV}>{first.toLowerCase()}</motion.span>
+          {rest.length > 0 && <motion.span className="sublogo" variants={wordV}>{rest.join(' ')}</motion.span>}
         </motion.button>
       </motion.h1>
+      {ev?.dates && (
+        <motion.div layout="position" className="ribbon" initial={{ opacity: 0, scaleX: 0.6 }} animate={{ opacity: 1, scaleX: 1 }} transition={{ ...T.soft, delay: 0.3 }}>
+          <span>{ev.dates}</span>
+        </motion.div>
+      )}
       <AnimatePresence>
-        {!compact && menu?.tagline && (
-          <motion.p className="muted" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.3 } }} exit={{ opacity: 0 }}>{menu.tagline}</motion.p>
+        {!compact && (
+          <motion.div className="hero-art" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.8, ease: [0.2, 0.7, 0.3, 1] }}>
+            <img src="/dancers.webp" alt="Garba dancers with dandiya sticks" width="900" height="639" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {!compact && ev && (
+          <motion.div className="event-info" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.4 } }} exit={{ opacity: 0 }}>
+            {ev.time && <span><Clock size={16} aria-hidden="true" />{ev.time}</span>}
+            {ev.venue && <span><MapPin size={16} aria-hidden="true" />{ev.venue}{ev.venueNote && <small>{ev.venueNote}</small>}</span>}
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.header>
@@ -473,7 +503,7 @@ function Confirmation({ order: o, money, fireConfetti, onAgain }) {
       </motion.div>
       <h2>{cancelled ? 'Order cancelled' : `Thank you, ${o.name}!`}</h2>
       <p className="muted" style={{ margin: '6px 0 0' }}>Your order number</p>
-      <motion.div ref={numRef} className="ordno brand rainbow-text" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...T.bouncy, delay: 0.25 }}>#{o.no}</motion.div>
+      <motion.div ref={numRef} className="ordno brand gold-text" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...T.bouncy, delay: 0.25 }}>#{o.no}</motion.div>
 
       {!cancelled && (
         <div className="track" aria-label={`Order progress: ${STEPS[idx]?.[1]}`}>

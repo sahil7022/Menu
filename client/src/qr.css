@@ -1,20 +1,37 @@
 .qrpage { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
-.poster { width: min(460px, 100%); text-align: center; overflow: hidden; position: relative; border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
-.poster .mandala { position: absolute; width: 200px; height: 200px; }
-.poster .m1 { left: -80px; top: 40px; } .poster .m2 { right: -80px; bottom: 60px; }
-.poster .inner { position: relative; padding: 26px 28px 28px; }
-.kicker { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-full); background: var(--surface-2); color: var(--primary); font-weight: 900; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
-.poster h1 { margin-top: 12px; font-size: 2.7rem; line-height: 1.1; }
-.frame { position: relative; margin: 22px auto; padding: 12px; border-radius: 26px; width: fit-content; overflow: hidden; isolation: isolate; }
-.frame::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: conic-gradient(var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange)); animation: rot 6s linear infinite; }
-.frame img { display: block; width: 260px; height: 260px; background: #fff; border-radius: 16px; padding: 12px; }
-.steps { display: flex; justify-content: center; gap: 22px; }
-.steps > div { display: grid; justify-items: center; gap: 6px; font-family: var(--heading); font-weight: 800; }
-.steps .sic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: #fff; }
-.url { word-break: break-all; font-size: .84rem; margin: 14px 0 0; }
+.poster { width: min(480px, 100%); text-align: center; overflow: hidden; position: relative; border-radius: var(--r-lg); box-shadow: var(--shadow-md), var(--glow);
+  background: radial-gradient(40rem 22rem at 50% 18%, rgba(255, 150, 40, .22), transparent 60%), linear-gradient(180deg, #161b42, #0b0e26); }
+.poster .bell { position: absolute; top: 14px; display: grid; justify-items: center; z-index: 2; filter: drop-shadow(0 0 8px rgba(255, 180, 70, .45)); }
+.poster .bell-left { left: 22px; } .poster .bell-right { right: 22px; }
+.poster .bell .chain { display: block; width: 2px; background: repeating-linear-gradient(#e0a64a 0 4px, transparent 4px 6px); }
+/* faint dancers behind the QR, like the poster */
+.poster-art { position: absolute; inset: 200px 0 auto; height: 420px; background: url(/dancers.webp) center 40% / cover no-repeat; opacity: .22;
+  -webkit-mask: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 100%); mask: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 100%); }
+.poster .mandala { position: absolute; width: 220px; height: 220px; }
+.poster .m1 { left: -90px; top: 260px; } .poster .m2 { right: -90px; bottom: 120px; }
+.poster .inner { position: relative; padding: 30px 26px 28px; }
+.p-presents { margin: 0 0 2px; font-family: var(--heading); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; color: var(--gold); }
+.p-presents em { display: block; font-family: Georgia, serif; text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--ink-2); }
+.p-title { display: grid; justify-items: center; }
+.p-title .logo { font-size: 4.4rem; line-height: 1; }
+.p-title .sublogo { font-family: var(--heading); font-weight: 800; letter-spacing: .32em; text-indent: .32em; text-transform: uppercase; font-size: .85rem; color: var(--gold); }
+.poster .ribbon { display: inline-block; margin: 12px auto 0; padding: 7px 26px; font-family: var(--heading); font-weight: 800; font-size: .95rem; color: var(--on-light);
+  background: linear-gradient(180deg, #ffe39a, #e9b44c 60%, #c88b2a); box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+  clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%); }
+.kicker { display: flex; width: fit-content; align-items: center; gap: 6px; margin: 18px auto 0; padding: 6px 14px; border-radius: var(--r-full); background: rgba(255, 199, 102, .12); color: var(--gold); font-weight: 900; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+.frame { position: relative; margin: 14px auto 18px; padding: 10px; border-radius: 24px; width: fit-content; overflow: hidden; isolation: isolate; box-shadow: var(--glow); }
+.frame::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: conic-gradient(#fff1c9, #ffc766, #e8862a, #8a5a16, #ffc766, #fff1c9); animation: rot 6s linear infinite; }
+.frame img { display: block; width: 240px; height: 240px; background: #fff; border-radius: 16px; padding: 12px; }
+.steps { display: flex; justify-content: center; gap: 24px; }
+.steps > div { display: grid; justify-items: center; gap: 6px; font-family: var(--heading); font-weight: 800; color: var(--ink); }
+.steps .sic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; color: var(--on-light); background: var(--cta); box-shadow: var(--shadow-cta); }
+.p-info { display: grid; justify-items: center; gap: 4px; margin-top: 18px; font-family: var(--heading); font-weight: 700; font-size: .86rem; color: var(--gold); }
+.p-info span { display: inline-flex; align-items: center; gap: 6px; }
+.p-info small { font-family: var(--font); color: var(--ink-2); font-weight: 600; }
+.url { word-break: break-all; font-size: .84rem; margin: 12px 0 0; }
 .actions { display: flex; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 @media print {
-  .actions { display: none; } body { background: #fff; } .qrpage { padding: 0; }
-  .poster { box-shadow: none; border: 2px solid #eee; }
+  .actions, .embers { display: none; } .qrpage { padding: 0; }
+  .poster { box-shadow: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; animation: none !important; }
 }

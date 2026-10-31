@@ -79,7 +79,7 @@ export function Mandala({ className, style, reverse }) {
   return (
     <motion.div className={`mandala ${className || ''}`} style={style} aria-hidden="true"
       initial={{ scale: 0.3, opacity: 0 }}
-      animate={{ scale: 1, opacity: style?.opacity ?? 0.2, rotate: reverse ? -360 : 360 }}
+      animate={{ scale: 1, opacity: style?.opacity ?? 0.28, rotate: reverse ? -360 : 360 }}
       transition={{ scale: { duration: 1.2, ease: [0.2, 0.7, 0.3, 1] }, opacity: { duration: 1 }, rotate: { duration: 60, repeat: Infinity, ease: 'linear' } }} />
   );
 }
@@ -89,4 +89,43 @@ export async function fetchJSON(url, opts) {
   const data = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(data.error || 'Something went wrong'); e.status = r.status; throw e; }
   return data;
+}
+
+// Glowing embers drifting up behind the page (like the poster's sparks).
+export function Embers({ count = 22 }) {
+  const reduce = useReducedMotion();
+  const [sparks] = useState(() => Array.from({ length: count }, (_, i) => ({
+    i, left: Math.random() * 100, size: 3 + Math.random() * 5, dur: 7 + Math.random() * 9,
+    delay: -Math.random() * 16, drift: (Math.random() - 0.5) * 80, peak: 0.5 + Math.random() * 0.5,
+  })));
+  if (reduce) return null;
+  return (
+    <div className="embers" aria-hidden="true">
+      {sparks.map((s) => (
+        <motion.i key={s.i} style={{ left: `${s.left}%`, width: s.size, height: s.size }}
+          animate={{ y: [0, -window.innerHeight - 40], x: [0, s.drift], opacity: [0, s.peak, s.peak, 0] }}
+          transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: 'linear', times: [0, 0.15, 0.8, 1] }} />
+      ))}
+    </div>
+  );
+}
+
+// Gold temple bell hanging on a chain, gently swinging.
+export function TempleBell({ side = 'left', chain = 60, delay = 0 }) {
+  return (
+    <motion.div className={`bell bell-${side}`} aria-hidden="true" style={{ transformOrigin: 'top center' }}
+      initial={{ rotate: 0 }} animate={{ rotate: [6, -6, 6] }} transition={{ duration: 3.2, delay, repeat: Infinity, ease: 'easeInOut' }}>
+      <span className="chain" style={{ height: chain }} />
+      <svg width="34" height="40" viewBox="0 0 34 40">
+        <defs>
+          <linearGradient id={`bg-${side}`} x1="0" x2="1">
+            <stop offset="0" stopColor="#8a5a16" /><stop offset=".45" stopColor="#ffd27a" /><stop offset="1" stopColor="#8a5a16" />
+          </linearGradient>
+        </defs>
+        <circle cx="17" cy="4" r="3.5" fill="none" stroke="#e0a64a" strokeWidth="2" />
+        <path d="M17 7c-7 0-10 6-10 13v8l-4 5h28l-4-5v-8c0-7-3-13-10-13z" fill={`url(#bg-${side})`} />
+        <circle cx="17" cy="36" r="3" fill="#ffcf6b" />
+      </svg>
+    </motion.div>
+  );
 }

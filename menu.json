@@ -2,6 +2,14 @@
   "stallName": "Navrang Food Stall",
   "tagline": "Nine colours · Nine nights · Endless flavours",
   "currency": "₹",
+  "event": {
+    "presentedBy": "South Kokan Education Society",
+    "name": "Navrang",
+    "dates": "13th & 14th November",
+    "time": "6:00 PM – 8:00 PM",
+    "venue": "Shri Chintamanrao Patwardhan Playground",
+    "venueNote": "RPD / GSS College Playground"
+  },
   "upi": {
     "id": "6362781833@jio",
     "name": "Navrang Food Stall"

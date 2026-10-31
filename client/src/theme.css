@@ -1,116 +1,129 @@
-/* Navrang design system
-   Direction (from UI/UX Pro Max, "Restaurant/Food Service"): Vibrant & Block-based + Motion-Driven,
-   warm appetizing base (red / orange / gold) with the nine Navratri colours as category accents.
-   Rules applied: AA text contrast, >=44px touch targets, visible focus, SVG icons only,
-   semantic tokens, reduced-motion support, transform/opacity-only animation. */
+/* Navrang design system — "festival night" theme, matched to the event poster:
+   midnight-navy sky, glowing gold, fire orange embers, marigold garlands and temple bells.
+   UI/UX Pro Max rules kept: AA text contrast on dark surfaces, >=44px targets, visible focus,
+   SVG icons only, semantic tokens, reduced-motion support, transform/opacity-only animation. */
 :root {
-  /* Nine colours: fill + readable ink on light surfaces */
-  --orange: #f97316; --orange-ink: #c2410c;
-  --red: #e11d48;    --red-ink: #be123c;
-  --royal: #2563eb;  --royal-ink: #1d4ed8;
-  --yellow: #f5b700; --yellow-ink: #92400e;
-  --green: #16a34a;  --green-ink: #15803d;
-  --purple: #9333ea; --purple-ink: #7e22ce;
-  --peacock: #0d9488;--peacock-ink: #0f766e;
-  --pink: #ec4899;   --pink-ink: #be185d;
-  --grey: #8a8f98;   --grey-ink: #4b5563;
+  color-scheme: dark;
+
+  /* Nine Navratri colours: fill (for icons/swatches) + light "ink" readable on the dark surfaces */
+  --orange: #f97316; --orange-ink: #ffb26b;
+  --red: #e11d48;    --red-ink: #ff8fa3;
+  --royal: #3b6cf6;  --royal-ink: #9db8ff;
+  --yellow: #f5b700; --yellow-ink: #ffd56b;
+  --green: #16a34a;  --green-ink: #74e39f;
+  --purple: #9333ea; --purple-ink: #d6a4ff;
+  --peacock: #0d9488;--peacock-ink: #5fe0d0;
+  --pink: #ec4899;   --pink-ink: #ffa3d1;
+  --grey: #8a8f98;   --grey-ink: #c9ccd3;
 
   /* Semantic tokens */
-  --bg: #fff7ed;
-  --surface: #ffffff;
-  --surface-2: #fff1e6;
-  --line: #f6e1cf;
-  --ink: #3b0d0d;           /* deep maroon */
-  --ink-2: #6b4040;         /* 7:1 on white */
-  --primary: #be123c;
-  --primary-2: #c2410c;
-  --gold: #a16207;
+  --bg: #0a0d22;                 /* midnight navy */
+  --bg-2: #11163a;
+  --surface: #151a3d;            /* cards */
+  --surface-2: #1d2350;          /* insets */
+  --line: rgba(255, 199, 120, .18);
+  --ink: #fbeedc;                /* warm cream — 15:1 on --surface */
+  --ink-2: #cdb99b;              /* muted gold-beige — 8:1 on --surface */
+  --on-light: #1a1033;           /* text on gold / light fills */
+  --gold: #ffc766;
+  --gold-2: #f59e2b;
+  --primary: var(--gold);
   --success: var(--green-ink);
   --danger: var(--red-ink);
-  --cta: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+  --cta: linear-gradient(135deg, #ffd27a 0%, #f59e2b 55%, #e8641c 100%);
+  --gold-text: linear-gradient(180deg, #fff1c9 0%, #ffc766 45%, #e8862a 100%);
   --rainbow: linear-gradient(90deg, var(--orange), var(--red), var(--pink), var(--purple), var(--royal), var(--peacock), var(--green), var(--yellow), var(--orange));
 
   --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-full: 999px;
-  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
-  --shadow-sm: 0 1px 2px rgba(59, 13, 13, .06), 0 2px 8px rgba(59, 13, 13, .05);
-  --shadow-md: 0 6px 16px rgba(59, 13, 13, .10), 0 16px 40px rgba(59, 13, 13, .08);
-  --shadow-cta: 0 10px 24px -6px rgba(190, 18, 60, .5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 14px rgba(0, 0, 0, .25);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 199, 120, .08);
+  --shadow-cta: 0 8px 26px -6px rgba(245, 158, 43, .55);
+  --glow: 0 0 24px rgba(255, 170, 60, .35);
 
   --font: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --heading: "Baloo 2", "Nunito", system-ui, sans-serif;
-  --brand: "Yatra One", "Baloo 2", serif;
+  --heading: "Cinzel", "Baloo 2", Georgia, serif;
+  --brand: "Yatra One", "Cinzel", serif;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
-html { scroll-padding-top: 170px; }
+html { scroll-padding-top: 170px; background: var(--bg); }
 body {
   font-family: var(--font); font-size: 16px; line-height: 1.5; color: var(--ink);
   background:
-    radial-gradient(60rem 30rem at 0% -10%, rgba(249, 115, 22, .16), transparent 60%),
-    radial-gradient(50rem 30rem at 110% 10%, rgba(225, 29, 72, .12), transparent 60%),
-    radial-gradient(50rem 30rem at -10% 100%, rgba(245, 183, 0, .12), transparent 60%),
-    var(--bg);
+    radial-gradient(60rem 32rem at 50% -8%, rgba(255, 150, 40, .22), transparent 60%),
+    radial-gradient(40rem 30rem at 110% 30%, rgba(225, 29, 72, .10), transparent 60%),
+    radial-gradient(40rem 30rem at -10% 80%, rgba(59, 108, 246, .12), transparent 60%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 40%);
   background-attachment: fixed; min-height: 100dvh; -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3 { font-family: var(--heading); font-weight: 800; line-height: 1.15; margin: 0; }
+h1, h2, h3 { font-family: var(--heading); font-weight: 700; line-height: 1.15; margin: 0; letter-spacing: .02em; }
 button { font: inherit; color: inherit; }
 svg { flex: none; }
 
 .brand { font-family: var(--brand); font-weight: 400; }
-.rainbow-text { background: var(--rainbow); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 10s linear infinite; }
+.gold-text, .rainbow-text {
+  background: var(--gold-text); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 12px rgba(255, 160, 50, .35));
+}
 @keyframes shimmer { to { background-position: 200% 0; } }
 
-/* Festive bunting */
+/* Marigold garland (genda phool toran) */
 .toran {
-  height: 14px; background: var(--rainbow); background-size: 200% 100%; animation: shimmer 10s linear infinite;
-  -webkit-mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
-          mask: radial-gradient(circle at 10px 0, #000 9px, transparent 10px) 0 0 / 20px 14px repeat-x;
+  height: 18px; position: relative; z-index: 2;
+  background:
+    radial-gradient(circle at 9px 9px, #ffd24a 0 5px, #f59e0b 5.5px 8px, transparent 8.5px) 0 0 / 18px 18px repeat-x,
+    radial-gradient(circle at 9px 9px, #ff8a1f 0 5px, #ea580c 5.5px 8px, transparent 8.5px) 9px 0 / 36px 18px repeat-x;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .5));
 }
-.band { height: 5px; background: var(--rainbow); }
+.band { height: 4px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 
-/* Rangoli mandala */
+/* Golden mandala line-art */
 .mandala {
   width: 120px; height: 120px; border-radius: 50%; pointer-events: none;
-  background: repeating-conic-gradient(var(--orange) 0 15deg, var(--red) 15deg 30deg, var(--purple) 30deg 45deg, var(--peacock) 45deg 60deg, var(--yellow) 60deg 75deg, var(--green) 75deg 90deg);
-  -webkit-mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
-          mask: radial-gradient(circle, transparent 18%, #000 19% 30%, transparent 31% 38%, #000 39% 70%, transparent 71%);
+  background: repeating-conic-gradient(rgba(255, 199, 102, .9) 0 4deg, transparent 4deg 15deg);
+  -webkit-mask: radial-gradient(circle, transparent 18%, #000 19% 22%, transparent 23% 38%, #000 39% 41%, transparent 42% 60%, #000 61% 70%, transparent 71%);
+          mask: radial-gradient(circle, transparent 18%, #000 19% 22%, transparent 23% 38%, #000 39% 41%, transparent 42% 60%, #000 61% 70%, transparent 71%);
 }
 
 /* Buttons */
 .btn {
   appearance: none; border: 0; cursor: pointer; text-decoration: none; user-select: none;
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 48px; padding: 12px 22px; border-radius: var(--r-full);
-  font-family: var(--heading); font-weight: 700; font-size: 1.05rem; letter-spacing: .01em;
-  color: #fff; background: var(--cta); box-shadow: var(--shadow-cta);
+  font-family: var(--font); font-weight: 900; font-size: 1.02rem; letter-spacing: .02em;
+  color: var(--on-light); background: var(--cta); box-shadow: var(--shadow-cta);
 }
 .btn:disabled { filter: grayscale(1); opacity: .45; cursor: not-allowed; box-shadow: none; }
-.btn.ghost { background: var(--surface); color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--line), var(--shadow-sm); }
-.btn.ghost:hover { box-shadow: inset 0 0 0 1.5px var(--primary), var(--shadow-sm); }
-.btn.danger { background: var(--surface); color: var(--danger); box-shadow: inset 0 0 0 1.5px #fbcfe8; }
+.btn.ghost { background: transparent; color: var(--gold); box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.ghost:hover { box-shadow: inset 0 0 0 1.5px var(--gold); }
+.btn.danger { background: transparent; color: var(--danger); box-shadow: inset 0 0 0 1.5px rgba(255, 143, 163, .4); }
 .btn.small { min-height: 44px; padding: 8px 16px; font-size: .95rem; }
 .btn.block { width: 100%; }
 .iconbtn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 0; background: var(--surface-2); color: var(--ink); cursor: pointer; }
-.linkbtn { background: none; border: 0; min-height: 44px; padding: 10px 4px; color: var(--primary); font-weight: 800; font-size: .9rem; cursor: pointer; }
+.linkbtn { background: none; border: 0; min-height: 44px; padding: 10px 4px; color: var(--gold); font-weight: 800; font-size: .9rem; cursor: pointer; }
 
-:focus-visible { outline: 3px solid color-mix(in srgb, var(--orange) 75%, transparent); outline-offset: 2px; border-radius: 10px; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 10px; }
 
 /* Fields */
 .field { position: relative; }
 .field > svg { position: absolute; left: 16px; top: 50%; translate: 0 -50%; color: var(--ink-2); pointer-events: none; }
-.label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: var(--sp-2); }
+.label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: 8px; color: var(--ink); }
 input, textarea {
   font: inherit; width: 100%; min-height: 52px; padding: 14px 16px; border-radius: var(--r-sm);
-  border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); outline: none;
+  border: 1.5px solid var(--line); background: rgba(10, 13, 34, .6); color: var(--ink); outline: none;
   transition: border-color .2s, box-shadow .2s;
 }
 .field input, .field textarea { padding-left: 48px; }
-input::placeholder, textarea::placeholder { color: #9a7a72; }
-input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent); }
-.err { color: var(--danger); font-weight: 700; font-size: .9rem; min-height: 1.35em; margin: var(--sp-1) 0 0; }
+input::placeholder, textarea::placeholder { color: #9b8b74; }
+input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(255, 199, 102, .15); }
+.err { color: var(--danger); font-weight: 700; font-size: .9rem; min-height: 1.35em; margin: 4px 0 0; }
 
-.card { background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-sm); border: 1px solid var(--line); }
+.card {
+  background: linear-gradient(180deg, rgba(29, 35, 80, .92), rgba(21, 26, 61, .92));
+  border-radius: var(--r-md); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
 .muted { color: var(--ink-2); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -120,17 +133,21 @@ input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4p
 .st-ready { --c: var(--green); --ci: var(--green-ink); }
 .st-done { --c: var(--grey); --ci: var(--grey-ink); }
 .st-cancelled { --c: var(--red); --ci: var(--red-ink); }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-full); font-size: .78rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ci); background: color-mix(in srgb, var(--c) 13%, #fff); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-full); font-size: .78rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ci); background: color-mix(in srgb, var(--c) 22%, var(--surface)); }
 
-.skel { border-radius: var(--r-md); background: linear-gradient(90deg, #fbeadb 0%, #fff 50%, #fbeadb 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
-.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: rot .7s linear infinite; }
+.skel { border-radius: var(--r-md); background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(26, 16, 51, .3); border-top-color: var(--on-light); animation: rot .7s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 
 .toast {
   position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); bottom: 100px; z-index: 60;
-  display: flex; align-items: center; gap: var(--sp-2); padding: 10px 16px; border-radius: var(--r-full);
-  background: var(--ink); color: #fff; font-weight: 700; font-size: .92rem; box-shadow: var(--shadow-md);
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-full);
+  background: #fbeedc; color: var(--on-light); font-weight: 800; font-size: .92rem; box-shadow: var(--shadow-md);
 }
+
+/* Floating embers layer */
+.embers { position: fixed; inset: 0; pointer-events: none; z-index: -1; overflow: hidden; }  /* behind all content */
+.embers i { position: absolute; bottom: -10px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ffb347 40%, rgba(255, 120, 30, 0) 70%); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
