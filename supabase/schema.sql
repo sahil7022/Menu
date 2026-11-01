@@ -161,3 +161,18 @@ insert into navrang.menu_items (id, name, price, category, description, veg, pop
 
 -- The full function bodies for expenses, push subscriptions, push keys, reset and menu editing are in the
 -- project's Supabase migrations (navrang_expenses_push_reset, navrang_reset_use_delete, navrang_editable_menu).
+
+-- Reset (workers' "Reset database"). Note: Supabase's API refuses DELETE without a WHERE clause
+-- (pg-safeupdate) even inside functions, hence "where true".
+create or replace function public.navrang_reset(p_pin text, p_orders boolean, p_expenses boolean) returns jsonb
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not navrang.pin_ok(p_pin) then return jsonb_build_object('error', 'forbidden'); end if;
+  if p_orders then
+    delete from navrang.orders where true;
+    alter table navrang.orders alter column no restart with 1;
+    delete from navrang.push_subs where role = 'customer';
+  end if;
+  if p_expenses then delete from navrang.expenses where true; end if;
+  return jsonb_build_object('ok', true);
+end $$;
