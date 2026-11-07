@@ -239,7 +239,11 @@ function NotifyPrompt({ orderId, onClose, onOn }) {
   async function on() {
     setBusy(true); setErr('');
     try { await enablePush(`/api/orders/${orderId}/push`); onOn(); }
-    catch (e) { setBusy(false); if (e.code === 'denied') onClose(); else setErr('Could not turn on — you can try again from the order screen.'); }
+    catch (e) {
+      setBusy(false);
+      setErr(e.code === 'denied' ? 'Notifications are blocked for this site — allow them in your browser settings, then tap again.'
+        : `Could not turn on (${e.message}). You can try again from the order screen.`);
+    }
   }
   return (
     <>
@@ -752,7 +756,7 @@ function NotifyCard({ o }) {
   async function turnOn() {
     setState('busy');
     try { await enablePush(`/api/orders/${o.id}/push`); markPushed(o.id); setState('on'); }
-    catch (e) { setState(e.code === 'ios-install' ? 'ios' : e.code === 'denied' ? 'denied' : 'error'); }
+    catch (e) { setState(e.code === 'ios-install' ? 'ios' : e.code === 'denied' ? 'denied' : 'error'); console.warn('Notify failed:', e); }
   }
   return (
     <AnimatePresence mode="wait" initial={false}>

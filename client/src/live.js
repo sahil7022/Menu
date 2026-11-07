@@ -53,19 +53,32 @@ const b64ToBytes = (b64) => {
   return Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 };
 
+const sameKey = (a, b) => {
+  if (!a) return false;
+  const x = new Uint8Array(a);
+  return x.length === b.length && x.every((v, i) => v === b[i]);
+};
+
 // Ask permission, subscribe this browser, and send the subscription to `endpoint`.
+// Returns the server's answer, e.g. { ok: true, sent: 1 } — `sent` = notifications actually delivered to push services.
 export async function enablePush(endpoint, headers = {}) {
   const state = pushState();
   if (state === 'unsupported' || state === 'ios-install') throw Object.assign(new Error(state), { code: state });
-  const cfg = await getConfig();
+  // Ask FIRST, straight from the tap: iPhone and Firefox refuse to show the question after any other await.
+  const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+  if (perm !== 'granted') throw Object.assign(new Error('Notifications are blocked for this site'), { code: 'denied' });
+  const [cfg, reg] = await Promise.all([getConfig(), navigator.serviceWorker.register('/sw.js')]);
   if (!cfg.pushKey) throw Object.assign(new Error('Notifications are not set up on the server'), { code: 'server' });
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted') throw Object.assign(new Error('denied'), { code: 'denied' });
-  const reg = await navigator.serviceWorker.register('/sw.js');
   await navigator.serviceWorker.ready;
+  const key = b64ToBytes(cfg.pushKey);
   let sub = await reg.pushManager.getSubscription();
-  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.pushKey) });
+  if (sub && !sameKey(sub.options && sub.options.applicationServerKey, key)) { await sub.unsubscribe().catch(() => {}); sub = null; } // old key → re-subscribe
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
   const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ subscription: sub.toJSON() }) });
-  if (!r.ok) throw Object.assign(new Error('Could not save'), { code: 'server' });
-  return true;
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(out.error || 'Could not save'), { code: 'server' });
+  return out;
 }
+
+// warm the config cache so the tap → permission question is instant
+if (typeof window !== 'undefined') setTimeout(() => getConfig(), 0);

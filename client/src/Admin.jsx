@@ -391,23 +391,28 @@ function MoneyPanel({ live, expenses, api, setExpenses, onReset }) {
 function AlertsButton({ pin }) {
   const [state, setState] = useState(() => (pushState() === 'ok' && localStorage.getItem('chatore_worker_push') ? 'on' : 'off'));
   const [msg, setMsg] = useState('');
+  const say = (m, ms = 7000) => { setMsg(m); setTimeout(() => setMsg(''), ms); };
   async function turnOn() {
+    const wasOn = state === 'on';
     setState('busy'); setMsg('');
-    try { await enablePush('/api/admin/push', { 'X-Admin-Pin': pin }); localStorage.setItem('chatore_worker_push', '1'); setState('on'); }
-    catch (e) {
-      setState('off');
-      setMsg(e.code === 'ios-install' ? 'iPhone: Share → Add to Home Screen, open it from there, then try again.'
-        : e.code === 'denied' ? 'Notifications are blocked — allow them in browser settings.' : 'Could not turn on alerts.');
-      setTimeout(() => setMsg(''), 6000);
+    try {
+      const r = await enablePush('/api/admin/push', { 'X-Admin-Pin': pin });
+      localStorage.setItem('chatore_worker_push', '1'); setState('on');
+      say(r.sent > 0 ? `✓ Test alert sent${wasOn ? ' again' : ''} — your phone should ring now.` : 'Saved, but the test alert could not be delivered. Check the phone has internet and try again.');
+    } catch (e) {
+      setState(wasOn ? 'on' : 'off');
+      say(e.code === 'ios-install' ? 'iPhone: Share → Add to Home Screen, open Hawres from the home screen, then try again.'
+        : e.code === 'denied' ? 'Notifications are blocked. Phone Settings → Apps → Chrome → Notifications → allow, then allow this site.'
+          : e.code === 'unsupported' ? 'This browser can’t do notifications — use Chrome on Android.' : `Could not turn on alerts: ${e.message}`, 9000);
     }
   }
   return (
     <span style={{ position: 'relative' }}>
       <motion.button className={`btn small ${state === 'on' ? '' : 'ghost'}`} onClick={turnOn} disabled={state === 'busy'} {...press}
         title="Get a phone notification for every new order">
-        <BellRing size={18} aria-hidden="true" />{state === 'on' ? 'Phone alerts on' : state === 'busy' ? 'Turning on…' : 'Phone alerts'}
+        <BellRing size={18} aria-hidden="true" />{state === 'on' ? 'Send test alert' : state === 'busy' ? 'Turning on…' : 'Phone alerts'}
       </motion.button>
-      <AnimatePresence>{msg && <motion.span className="tipmsg" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{msg}</motion.span>}</AnimatePresence>
+      <AnimatePresence>{msg && <motion.span className="tipmsg" role="status" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{msg}</motion.span>}</AnimatePresence>
     </span>
   );
 }

@@ -5,11 +5,12 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Hawres', body: event.data && event.data.text() }; }
+  const tag = data.tag || 'hawres-' + Date.now();     // renotify needs a tag, or showNotification throws
   event.waitUntil(self.registration.showNotification(data.title || 'Hawres', {
     body: data.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
-    tag: data.tag,
+    tag,
     renotify: true,
     silent: false,                                   // play the phone's notification sound
     requireInteraction: !!data.important,            // "ready" / "new order" stay until tapped
