@@ -128,3 +128,4 @@ header.top h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 10px
 .mtile .split { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: .75rem; color: var(--ink-2); margin-top: 2px; }
 .paychoices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 8px; }
 .payask p { margin: 0 0 6px; }
+.resetlink { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; min-height: 32px; padding: 4px 6px; color: var(--red-ink); font-size: .82rem; }

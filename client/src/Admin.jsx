@@ -37,7 +37,8 @@ export default function Admin() {
   const [sound, setSound] = useState(true);
   const [fresh, setFresh] = useState(() => new Set());
   const [expenses, setExpenses] = useState([]);
-  const [resetOpen, setResetOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(null);   // null | { orders, expenses } = what's ticked when the dialog opens
+  const [notice, setNotice] = useState('');
   const seen = useRef(null);
   const soundRef = useRef(sound); soundRef.current = sound;
 
@@ -143,6 +144,9 @@ export default function Admin() {
               {sound ? <Bell size={18} aria-hidden="true" /> : <BellOff size={18} aria-hidden="true" />}{sound ? 'Sound on' : 'Sound off'}
             </motion.button>
             <AlertsButton pin={pin} />
+            <motion.button className="btn small danger" onClick={() => setResetOpen({ orders: true, expenses: false })} {...press}>
+              <RotateCw size={18} aria-hidden="true" />Reset
+            </motion.button>
             <motion.a className="btn small ghost" href="/qr" target="_blank" rel="noopener" {...press}><QrCode size={18} aria-hidden="true" />QR poster</motion.a>
             <motion.button className="btn small ghost" onClick={exportCsv} {...press}><Download size={18} aria-hidden="true" />Export CSV</motion.button>
             <motion.button className="btn small ghost" aria-label="Log out" {...press}
@@ -150,7 +154,7 @@ export default function Admin() {
           </div>
         </header>
 
-        <MoneyPanel live={live} expenses={expenses} api={api} setExpenses={setExpenses} />
+        <MoneyPanel live={live} expenses={expenses} api={api} setExpenses={setExpenses} onReset={() => setResetOpen({ orders: true, expenses: true })} />
         <MenuEditor api={api} />
 
         <motion.div className="stats" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
@@ -194,7 +198,7 @@ export default function Admin() {
 
         <Summary live={live} />
         <p style={{ textAlign: 'right', marginTop: 20 }}>
-          <motion.button className="btn small danger" onClick={() => setResetOpen(true)} {...press}>
+          <motion.button className="btn small danger" onClick={() => setResetOpen({ orders: true, expenses: false })} {...press}>
             <RotateCw size={18} aria-hidden="true" />Reset database
           </motion.button>
         </p>
@@ -203,7 +207,11 @@ export default function Admin() {
         {payAsk && <PayAsk key="payask" o={payAsk} onPick={(m) => handOver(payAsk, m)} onClose={() => setPayAsk(null)} />}
       </AnimatePresence>
       <AnimatePresence>
-        {resetOpen && <ResetDialog key="reset" api={api} onClose={() => setResetOpen(false)} onDone={() => { setResetOpen(false); seen.current = null; setFresh(new Set()); load(); }} />}
+        {resetOpen && <ResetDialog key="reset" preset={resetOpen} api={api} onClose={() => setResetOpen(null)}
+          onDone={(what) => { setResetOpen(null); seen.current = null; setFresh(new Set()); load(); setNotice(`Reset done — ${what} cleared ✓`); setTimeout(() => setNotice(''), 4000); }} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {notice && <motion.div className="toast" role="status" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><Check size={16} aria-hidden="true" />{notice}</motion.div>}
       </AnimatePresence>
     </>
   );
@@ -300,7 +308,7 @@ function Login({ pin, setPin, err, onSubmit }) {
 }
 
 /* ---------------- Money: investment, collected, profit ---------------- */
-function MoneyPanel({ live, expenses, api, setExpenses }) {
+function MoneyPanel({ live, expenses, api, setExpenses, onReset }) {
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [err, setErr] = useState('');
@@ -338,7 +346,8 @@ function MoneyPanel({ live, expenses, api, setExpenses }) {
     <section className="money card" aria-labelledby="moneyh">
       <div className="money-head">
         <h3 id="moneyh">Money</h3>
-        <span className="muted">Profit = money collected − investment. Updates by itself.</span>
+        <span className="muted">Profit = money collected − investment. Updates by itself.
+          <button className="linkbtn resetlink" onClick={onReset}><RotateCw size={14} aria-hidden="true" />Reset money &amp; orders</button></span>
       </div>
       <div className="mtiles">
         {tiles.map(([l, v, I, c, ci]) => (
@@ -404,9 +413,9 @@ function AlertsButton({ pin }) {
 }
 
 /* ---------------- Reset database ---------------- */
-function ResetDialog({ api, onClose, onDone }) {
-  const [orders, setOrders] = useState(true);
-  const [exp, setExp] = useState(false);
+function ResetDialog({ preset, api, onClose, onDone }) {
+  const [orders, setOrders] = useState(preset?.orders ?? true);
+  const [exp, setExp] = useState(preset?.expenses ?? false);
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -415,7 +424,10 @@ function ResetDialog({ api, onClose, onDone }) {
   async function go(e) {
     e.preventDefault(); if (!ok) return;
     setBusy(true); setErr('');
-    try { await api('/api/admin/reset', { method: 'POST', body: JSON.stringify({ orders, expenses: exp }) }); onDone(); }
+    try {
+      await api('/api/admin/reset', { method: 'POST', body: JSON.stringify({ orders, expenses: exp }) });
+      onDone([orders && 'orders & payments', exp && 'investment'].filter(Boolean).join(' and '));
+    }
     catch (e2) { setErr(e2.message || 'Could not reset'); setBusy(false); }
   }
   return (
