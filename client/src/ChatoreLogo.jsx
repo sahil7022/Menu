@@ -68,10 +68,10 @@ export default function ChatoreLogo({ size = 96, animated = true, title = 'Hawre
 }
 
 // Logo + wordmark ("chatore" / "चटोरे" / FOOD STALL), used on the menu, QR poster and workers' page.
-export function BrandMark({ menu, size = 104, row = false, variants }) {
+export function BrandMark({ menu, size = 104, row = false, variants, animated = true }) {
   return (
     <span className={`brandmark ${row ? 'row' : ''}`}>
-      <motion.span className="brandmark-logo" variants={variants}><ChatoreLogo size={size} /></motion.span>
+      <motion.span className="brandmark-logo" variants={variants}><ChatoreLogo size={size} animated={animated} /></motion.span>
       <span className="brandmark-words">
         <motion.span className="logo gold-text brand" variants={variants}>{(menu?.stallName || 'Hawres').toLowerCase()}</motion.span>
         {menu?.stallNameHindi && <motion.span className="hindi brand" variants={variants} lang="hi">{menu.stallNameHindi}</motion.span>}

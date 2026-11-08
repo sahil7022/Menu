@@ -39,6 +39,20 @@
   --shadow-md: 0 10px 30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 199, 120, .08);
   --shadow-cta: 0 8px 26px -6px rgba(245, 158, 43, .55);
   --glow: 0 0 24px rgba(255, 170, 60, .35);
+  /* surfaces that differ between themes */
+  --card-bg: linear-gradient(180deg, rgba(29, 35, 80, .92), rgba(21, 26, 61, .92));
+  --field-bg: rgba(10, 13, 34, .6);
+  --scrim: rgba(4, 6, 20, .72);
+  --sheet-bg: linear-gradient(180deg, #1d2350, #121738);
+  --glass: rgba(10, 13, 34, .96);
+  --chip-bg: rgba(21, 26, 61, .8);
+  --toast-bg: #fbeedc; --toast-ink: var(--on-light);
+  --on-ink: var(--on-light);          /* text on a coloured "ink" fill (category pills, steppers) */
+  --page-glow:
+    radial-gradient(60rem 32rem at 50% -8%, rgba(255, 150, 40, .22), transparent 60%),
+    radial-gradient(40rem 30rem at 110% 30%, rgba(225, 29, 72, .10), transparent 60%),
+    radial-gradient(40rem 30rem at -10% 80%, rgba(59, 108, 246, .12), transparent 60%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 40%);
 
   --font: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --heading: "Cinzel", "Baloo 2", Georgia, serif;
@@ -55,11 +69,7 @@ body {
 /* fixed glow layer: painted once, never repainted while scrolling */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; transform: translateZ(0);
-  background:
-    radial-gradient(60rem 32rem at 50% -8%, rgba(255, 150, 40, .22), transparent 60%),
-    radial-gradient(40rem 30rem at 110% 30%, rgba(225, 29, 72, .10), transparent 60%),
-    radial-gradient(40rem 30rem at -10% 80%, rgba(59, 108, 246, .12), transparent 60%),
-    linear-gradient(180deg, var(--bg-2), var(--bg) 40%);
+  background: var(--page-glow);
 }
 h1, h2, h3 { font-family: var(--heading); font-weight: 700; line-height: 1.15; margin: 0; letter-spacing: .02em; }
 button { font: inherit; color: inherit; }
@@ -68,7 +78,6 @@ svg { flex: none; }
 .brand { font-family: var(--brand); font-weight: 400; }
 .gold-text, .rainbow-text {
   background: var(--gold-text); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 12px rgba(255, 160, 50, .35));
 }
 @keyframes shimmer { to { background-position: 200% 0; } }
 
@@ -115,7 +124,7 @@ svg { flex: none; }
 .label { display: block; font-weight: 800; font-size: .9rem; margin-bottom: 8px; color: var(--ink); }
 input, textarea {
   font: inherit; width: 100%; min-height: 52px; padding: 14px 16px; border-radius: var(--r-sm);
-  border: 1.5px solid var(--line); background: rgba(10, 13, 34, .6); color: var(--ink); outline: none;
+  border: 1.5px solid var(--line); background: var(--field-bg); color: var(--ink); outline: none;
   transition: border-color .2s, box-shadow .2s;
 }
 .field input, .field textarea { padding-left: 48px; }
@@ -124,7 +133,7 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
 .err { color: var(--danger); font-weight: 700; font-size: .9rem; min-height: 1.35em; margin: 4px 0 0; }
 
 .card {
-  background: linear-gradient(180deg, rgba(29, 35, 80, .92), rgba(21, 26, 61, .92));
+  background: var(--card-bg);
   border-radius: var(--r-md); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
 }
 .muted { color: var(--ink-2); }
@@ -145,12 +154,12 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
 .toast {
   position: fixed; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); bottom: 100px; z-index: 60;
   display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: var(--r-full);
-  background: #fbeedc; color: var(--on-light); font-weight: 800; font-size: .92rem; box-shadow: var(--shadow-md);
+  background: var(--toast-bg); color: var(--toast-ink); font-weight: 800; font-size: .92rem; box-shadow: var(--shadow-md);
 }
 
 /* Chatore brand block */
 .brandmark { display: inline-grid; justify-items: center; gap: 2px; }
-.brandmark-logo { display: block; filter: drop-shadow(0 0 18px rgba(255, 170, 60, .45)); }
+.brandmark-logo { display: block; }   /* glow is painted inside the SVG — no costly filter */
 .brandmark-words { display: grid; justify-items: center; }
 .brandmark .logo { font-size: clamp(3.2rem, 15vw, 4.2rem); line-height: .95; }
 .brandmark .hindi { font-size: 1.35rem; line-height: 1.1; color: var(--gold); margin-top: 2px; }
@@ -181,3 +190,49 @@ input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px r
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
+
+/* ================= Light theme — "festival day" =================
+   Ivory paper, deep maroon text, saffron & temple-gold accents. Same layout, same contrast rules (AA). */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --orange-ink: #c2410c; --red-ink: #be123c; --royal-ink: #1d4ed8; --yellow-ink: #92400e; --green-ink: #15803d;
+  --purple-ink: #7e22ce; --peacock-ink: #0f766e; --pink-ink: #be185d; --grey-ink: #4b5563;
+
+  --bg: #fff8ee;
+  --bg-2: #ffefd9;
+  --surface: #ffffff;
+  --surface-2: #fff4e6;
+  --line: rgba(146, 64, 14, .18);
+  --ink: #3b1206;            /* deep maroon — 14:1 on white */
+  --ink-2: #7a4632;          /* 7:1 on white */
+  --gold: #b45309;           /* temple gold as text — 5:1 on white */
+  --gold-2: #f59e2b;
+  --gold-text: linear-gradient(180deg, #f59e2b 0%, #c2410c 55%, #8a2c0a 100%);
+  --cta: linear-gradient(135deg, #ffc35a 0%, #f59e2b 50%, #ea6a1b 100%);
+  --shadow-sm: 0 1px 2px rgba(120, 50, 10, .08), 0 4px 14px rgba(120, 50, 10, .08);
+  --shadow-md: 0 10px 30px rgba(120, 50, 10, .16);
+  --shadow-cta: 0 8px 22px -6px rgba(234, 106, 27, .45);
+  --glow: 0 0 22px rgba(245, 158, 43, .3);
+
+  --card-bg: linear-gradient(180deg, #ffffff, #fffaf3);
+  --field-bg: #ffffff;
+  --scrim: rgba(59, 18, 6, .42);
+  --sheet-bg: linear-gradient(180deg, #ffffff, #fff6ea);
+  --glass: rgba(255, 250, 243, .97);
+  --chip-bg: #ffffff;
+  --toast-bg: #3b1206; --toast-ink: #fff8ee;
+  --on-ink: #ffffff;
+  --page-glow:
+    radial-gradient(60rem 30rem at 50% -10%, rgba(255, 179, 71, .30), transparent 60%),
+    radial-gradient(40rem 30rem at 110% 30%, rgba(236, 72, 153, .08), transparent 60%),
+    radial-gradient(40rem 30rem at -10% 85%, rgba(13, 148, 136, .08), transparent 60%),
+    linear-gradient(180deg, var(--bg-2), var(--bg) 35%);
+}
+:root[data-theme="light"] input::placeholder, :root[data-theme="light"] textarea::placeholder { color: #a07a68; }
+:root[data-theme="light"] .embers i { background: radial-gradient(circle, #fff3c4 0%, #f59e2b 45%, rgba(234, 106, 27, 0) 70%); }
+:root[data-theme="light"] .mandala { background: repeating-conic-gradient(rgba(194, 65, 12, .55) 0 4deg, transparent 4deg 15deg); }
+:root[data-theme="light"] .iconbtn { background: var(--surface-2); }
+
+/* theme switch: circular reveal (View Transitions) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+.themebtn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: var(--glass); color: var(--gold); cursor: pointer; }

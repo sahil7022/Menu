@@ -1,7 +1,7 @@
 // Shared bits: motion tokens, palette, animated number, confetti, buttons.
 import { useCallback, useEffect, useState } from 'react';
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
-import { CakeSlice, Coffee, CupSoda, Flame, Cookie, Soup, UtensilsCrossed } from 'lucide-react';
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
+import { CakeSlice, Coffee, CupSoda, Flame, Cookie, Moon, Soup, Sun, UtensilsCrossed } from 'lucide-react';
 
 // Motion tokens — one place for timing, chosen per purpose (not one duration everywhere).
 export const T = {
@@ -128,5 +128,42 @@ export function TempleBell({ side = 'left', chain = 60, delay = 0 }) {
         <circle cx="17" cy="36" r="3" fill="#ffcf6b" />
       </svg>
     </div>
+  );
+}
+
+// ---------- Light / dark theme ----------
+const THEME_KEY = 'hawres_theme';
+export const getTheme = () => document.documentElement.dataset.theme || 'dark';
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem(THEME_KEY, t); } catch { /* private mode */ }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#fff8ee' : '#0a0d22');
+}
+// Sun/moon button: switches with a circular reveal from the button (where supported).
+export function ThemeToggle({ className = '' }) {
+  const [theme, setTheme] = useState(getTheme);
+  const reduce = useReducedMotion();
+  function toggle(e) {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    navigator.vibrate?.(8);
+    const swap = () => { applyTheme(next); setTheme(next); };
+    if (!document.startViewTransition || reduce) return swap();
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    document.startViewTransition(swap).ready.then(() => {
+      document.documentElement.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        { duration: 550, easing: 'cubic-bezier(.2,.7,.3,1)', pseudoElement: '::view-transition-new(root)' });
+    }).catch(() => {});
+  }
+  return (
+    <motion.button className={`themebtn ${className}`} onClick={toggle} whileTap={{ scale: 0.88 }}
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} title={theme === 'dark' ? 'Light theme' : 'Dark theme'}>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span key={theme} style={{ display: 'grid' }} initial={{ rotate: -90, scale: 0.4, opacity: 0 }} animate={{ rotate: 0, scale: 1, opacity: 1 }} exit={{ rotate: 90, scale: 0.4, opacity: 0 }} transition={{ duration: 0.25 }}>
+          {theme === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   );
 }

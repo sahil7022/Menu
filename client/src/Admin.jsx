@@ -4,7 +4,7 @@ import {
   Bell, BellOff, Camera, Check, ChefHat, CircleCheck, Clock, Download, ImagePlus, Lock, LogOut, MoreHorizontal, LayoutList, Soup,
   Banknote, BadgeIndianRupee, BellRing, HandPlatter, Smartphone, NotebookPen, Pencil, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
-import { AnimatedNumber, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
+import { AnimatedNumber, NINE, T, ThemeToggle, fetchJSON, makeMoney, press } from './ui.jsx';
 import ChatoreLogo from './ChatoreLogo.jsx';
 import { enablePush, pushState, useLive } from './live.js';
 import { buzz, shrinkPhoto } from './media.js';
@@ -47,6 +47,7 @@ export default function Admin() {
   const goTab = (t) => { if (t === tab) return; buzz(); setTabDir(TABS.indexOf(t) > TABS.indexOf(tab) ? 1 : -1); setTab(t); sessionStorage.setItem('hawres_tab', t); scrollTo({ top: 0 }); };
   const flash = (m) => { setNotice(m); setTimeout(() => setNotice(''), 3500); };
   const seen = useRef(null);
+  const lastSig = useRef('');
   const soundRef = useRef(sound); soundRef.current = sound;
 
   useEffect(() => { document.title = 'Hawres · Orders'; }, []);
@@ -63,7 +64,7 @@ export default function Admin() {
   const load = useCallback(async () => {
     const [list, exp] = await Promise.all([api('/api/admin/orders').catch(() => null), api('/api/admin/expenses').catch(() => null)]);
     if (!list) return;
-    if (Array.isArray(exp)) setExpenses(exp);
+    if (Array.isArray(exp)) setExpenses((old) => (JSON.stringify(old) === JSON.stringify(exp) ? old : exp));
     if (seen.current) {
       const n = list.filter((o) => !seen.current.has(o.id));
       if (n.length) {
@@ -73,7 +74,9 @@ export default function Admin() {
       }
     }
     seen.current = new Set(list.map((o) => o.id));
-    setOrders(list); setAuthed(true); sessionStorage.setItem('navrang_pin', pin);
+    const sig = JSON.stringify(list);
+    if (sig !== lastSig.current) { lastSig.current = sig; setOrders(list); }   // no redraw when nothing changed
+    setAuthed(true); sessionStorage.setItem('navrang_pin', pin);
   }, [api, pin]);
 
   useEffect(() => { if (pin && !authed && sessionStorage.getItem('navrang_pin')) load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -150,8 +153,9 @@ export default function Admin() {
     <>
       <div className="toran" aria-hidden="true" />
       <header className="atop">
-        <span className="abrand"><ChatoreLogo size={40} title="Hawres" /><span><b>Hawres</b><small>Poonam's Workers</small></span></span>
+        <span className="abrand"><ChatoreLogo size={40} title="Hawres" animated={false} /><span><b>Hawres</b><small>Poonam's Workers</small></span></span>
         <span className="live"><motion.i animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />Live</span>
+        <ThemeToggle />
         <motion.button className="iconbtn morebtn" onClick={() => { buzz(); setMore(true); }} aria-label="More options" {...press}><MoreHorizontal size={22} aria-hidden="true" /></motion.button>
       </header>
 
@@ -242,7 +246,7 @@ export default function Admin() {
                 <motion.a className="moreitem" href="/qr" target="_blank" rel="noopener" whileTap={{ scale: 0.97 }}><QrCode size={22} aria-hidden="true" /><span><b>QR poster</b><small>Open the printable poster</small></span></motion.a>
                 <motion.button className="moreitem" onClick={() => { exportCsv(); setMore(false); }} whileTap={{ scale: 0.97 }}><Download size={22} aria-hidden="true" /><span><b>Export CSV</b><small>Download all orders</small></span></motion.button>
                 <motion.button className="moreitem danger" onClick={() => { setMore(false); setResetOpen({ orders: true, expenses: false }); }} whileTap={{ scale: 0.97 }}><RotateCw size={22} aria-hidden="true" /><span><b>Reset database</b><small>Clear orders and/or investment</small></span></motion.button>
-                <motion.button className="moreitem" onClick={() => { sessionStorage.removeItem('navrang_pin'); setPin(''); setAuthed(false); setMore(false); }} whileTap={{ scale: 0.97 }}><LogOut size={22} aria-hidden="true" /><span><b>Log out</b></span></motion.button>
+                <motion.button className="moreitem" onClick={() => { sessionStorage.removeItem('navrang_pin'); lastSig.current = ''; setPin(''); setAuthed(false); setMore(false); }} whileTap={{ scale: 0.97 }}><LogOut size={22} aria-hidden="true" /><span><b>Log out</b></span></motion.button>
               </div>
             </motion.div>
           </>
@@ -510,7 +514,10 @@ function MenuEditor({ api, flash = () => {} }) {
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null);   // item being added/edited
   const [open, setOpen] = useState(true);
-  const load = useCallback(async () => { const m = await fetchJSON('/api/menu').catch(() => null); if (m) setCats(m.categories); }, []);
+  const load = useCallback(async () => {
+    const m = await fetchJSON('/api/menu').catch(() => null);
+    if (m) setCats((old) => (JSON.stringify(old) === JSON.stringify(m.categories) ? old : m.categories));
+  }, []);
   useEffect(() => { load(); }, [load]);
   useLive((ev) => { if (!ev.kind || ['menu', 'timer', 'visible'].includes(ev.kind)) load(); }, 20000);
   const count = cats.reduce((n, c) => n + c.items.length, 0);

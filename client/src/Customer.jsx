@@ -4,7 +4,7 @@ import {
   ArrowRight, Bell, BellRing, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
   Copy, MapPin, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
-import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
+import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, ThemeToggle, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
 import Splash from './Splash.jsx';
 import { BrandMark } from './ChatoreLogo.jsx';
@@ -73,14 +73,14 @@ export default function Customer() {
       if (p && !p.paid && o.paid) { chime(2); navigator.vibrate?.([120, 60, 120]); showToast(`Payment confirmed for #${o.no} ✓`); }
     }
     prev.current = next;
-    setMyOrders(next);
+    setMyOrders((old) => (JSON.stringify(old) === JSON.stringify(next) ? old : next));   // no redraw when nothing changed
   };
   useLive(refresh, 5000, myIds.length > 0);
   // the menu can change while customers browse (new dishes, prices, sold out)
   useLive(async (ev) => {
     if (ev.kind && !['menu', 'visible', 'timer'].includes(ev.kind)) return;
     const m = await fetchJSON('/api/menu').catch(() => null);
-    if (m) setMenu(m);
+    if (m) setMenu((old) => (JSON.stringify(old) === JSON.stringify(m) ? old : m));
   }, 15000, !!menu);
   // drop cart items that sold out or were removed
   useEffect(() => {
@@ -170,6 +170,7 @@ export default function Customer() {
           onCart={() => { if (count) { setScreen('menu'); setSheet(true); } else { setScreen('menu'); showToast('Your cart is empty — add something tasty!'); } }}
           onOrders={() => setOrdersSheet(true)} />
       )}
+      <ThemeToggle className={`themefloat ${compact ? "" : "low"}`} />
       <Hero menu={menu} compact={compact} onTitle={onTitleTap} />
 
       <main className="wrap">
@@ -382,7 +383,7 @@ function Hero({ menu, compact, onTitle }) {
         {/* Tapping the stall name 5 times opens the workers' login */}
         <motion.button type="button" className="title-btn" onClick={onTitle} whileTap={{ scale: 0.97 }}
           variants={wordsV} initial="hidden" animate={menu ? 'show' : 'hidden'}>
-          <BrandMark menu={menu} size={compact ? 52 : 108} row={compact} variants={wordV} />
+          <BrandMark menu={menu} size={compact ? 52 : 108} row={compact} variants={wordV} animated={!compact} />
         </motion.button>
       </motion.h1>
       <AnimatePresence>
@@ -471,12 +472,22 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName, ordersCount
   const [scrolled, setScrolled] = useState(false);
   const reduce = useReducedMotion();
   const tabsRef = useRef();
+  const lockUntil = useRef(0);   // ignore the scroll-spy briefly after a tab tap
 
   useEffect(() => {
     let ticking = false;
-    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { setScrolled(scrollY > 120); ticking = false; }); };
+    const onScroll = () => {
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(scrollY > 120); ticking = false;
+        // at the very bottom the last category can't reach the middle of the screen: highlight it anyway
+        if (Date.now() > lockUntil.current && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
+          const secs = document.querySelectorAll('section.cat'); if (secs.length) setActive(+secs[secs.length - 1].dataset.i);
+        }
+      });
+    };
     addEventListener('scroll', onScroll, { passive: true });
-    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && setActive(+e.target.dataset.i)), { rootMargin: '-45% 0px -50% 0px' });
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && Date.now() > lockUntil.current && setActive(+e.target.dataset.i)), { rootMargin: '-45% 0px -50% 0px' });
     document.querySelectorAll('section.cat').forEach((s) => io.observe(s));
     return () => { removeEventListener('scroll', onScroll); io.disconnect(); };
   }, [q]);
@@ -513,7 +524,10 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName, ordersCount
             return (
               <motion.button key={c.i} data-i={c.i} className={`tab ${on ? 'on' : ''}`} style={{ '--c': fill, '--ci': ink }} {...press}
                 aria-current={on ? 'true' : undefined}
-                onClick={() => document.getElementById('cat' + c.i)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })}>
+                onClick={() => {
+                  buzz(); setActive(c.i); lockUntil.current = Date.now() + 900;   // highlight the tapped tab right away
+                  document.getElementById('cat' + c.i)?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+                }}>
                 {on && <motion.span layoutId="tabpill" className="tabpill" transition={T.spring} />}
                 <span className="tab-in"><CategoryIcon name={c.name} size={16} />{c.name}</span>
               </motion.button>
