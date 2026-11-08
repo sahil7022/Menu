@@ -176,3 +176,6 @@ begin
   if p_expenses then delete from navrang.expenses where true; end if;
   return jsonb_build_object('ok', true);
 end $$;
+
+-- Dish photos + payment method: see migrations navrang_item_images and navrang_pay_method
+-- (tables navrang.images, column navrang.orders.pay_method, functions navrang_set_item_image / navrang_get_item_image).

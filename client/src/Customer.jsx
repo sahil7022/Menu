@@ -9,6 +9,7 @@ import StaffGate from './StaffGate.jsx';
 import Splash from './Splash.jsx';
 import { BrandMark } from './ChatoreLogo.jsx';
 import { enablePush, pushState, useLive } from './live.js';
+import { buzz } from './media.js';
 import './customer.css';
 
 const LS_NAME = 'navrang_name', LS_ORDERS = 'chatore_orders', LS_PUSHED = 'chatore_push_orders';
@@ -69,7 +70,7 @@ export default function Customer() {
         if (o.status === 'ready') { navigator.vibrate?.([300, 120, 300, 120, 300]); chime(3); showToast(`Order #${o.no} is ready — collect it!`); }
         else if (o.status === 'preparing') { chime(1); showToast(`Order #${o.no} is being prepared`); }
       }
-      if (p && !p.paid && o.paid) { chime(1); showToast(`Payment received for #${o.no}`); }
+      if (p && !p.paid && o.paid) { chime(2); navigator.vibrate?.([120, 60, 120]); showToast(`Payment confirmed for #${o.no} ✓`); }
     }
     prev.current = next;
     setMyOrders(next);
@@ -110,7 +111,18 @@ export default function Customer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const change = (id, d) => {
+  // "fly to cart": a little copy of the dish photo arcs down to the cart bar
+  const [flights, setFlights] = useState([]);
+  const fly = (el, item) => {
+    if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = el.getBoundingClientRect();
+    const f = { id: Math.random(), x: r.left + r.width / 2, y: r.top + r.height / 2, image: item?.image, ci: item?.ci ?? 0 };
+    setFlights((l) => [...l, f]);
+    setTimeout(() => setFlights((l) => l.filter((x) => x.id !== f.id)), 900);
+  };
+  const change = (id, d, srcEl) => {
+    buzz(d > 0 ? 12 : 6);
+    if (d > 0 && srcEl) fly(srcEl.closest('.item')?.querySelector('.thumb') || srcEl, items.get(id));
     const cur = cart[id] || 0;
     const q = Math.max(0, Math.min(50, cur + d));
     if (d > 0 && !cur) showToast(`${items.get(id).name} added`);
@@ -207,6 +219,13 @@ export default function Customer() {
         {askNotify && <NotifyPrompt key="ask" orderId={askNotify} onClose={() => setAskNotify(null)} onOn={() => { markPushed(askNotify); setAskNotify(null); showToast('Notifications on — we\'ll ring when it\'s ready'); }} />}
       </AnimatePresence>
       {confetti}
+      {flights.map((f) => (
+        <motion.span key={f.id} className="flyer" aria-hidden="true"
+          style={{ left: f.x - 28, top: f.y - 28, '--c': NINE[f.ci % 9][0], backgroundImage: f.image ? `url(${f.image})` : undefined }}
+          initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+          animate={{ x: [0, (innerWidth / 2 - f.x) * 0.5, innerWidth / 2 - f.x], y: [0, -70, innerHeight - 52 - f.y], scale: [1, 0.9, 0.3], opacity: [1, 1, 0.3] }}
+          transition={{ duration: 0.75, ease: [0.3, 0.1, 0.4, 1], times: [0, 0.35, 1] }} />
+      ))}
       <AnimatePresence>
         {splash && <Splash key="splash" menu={menu} onDone={() => { sessionStorage.setItem('chatore_splash', '1'); setSplash(false); }} />}
       </AnimatePresence>
@@ -325,7 +344,7 @@ function OrdersSheet({ orders, money, onOpen, onClose }) {
                   <span className="mo-items">{o.items.map((i) => `${i.qty}× ${i.name}`).join(', ')}</span>
                   <span className="mo-tags">
                     <span className="pill">{STATUS_LABEL[o.status]}</span>
-                    <span className={`pill ${o.paid ? 'st-ready' : 'st-new'}`}>{o.paid ? (o.payMethod === 'cash' ? 'Paid · Cash' : 'Paid · UPI') : 'Unpaid'}</span>
+                    <span className={`pill ${o.paid ? 'st-ready' : 'st-new'}`}>{o.paid ? (o.payMethod === 'cash' ? 'Paid · Cash' : 'Paid · UPI') : 'Payment not confirmed'}</span>
                   </span>
                 </span>
                 <span className="mo-amt">{money(o.total)}</span>
@@ -534,7 +553,7 @@ function MenuScreen({ menu, name, cart, change, money, onChangeName, ordersCount
 
 function ItemCard({ it, cat, qty, change, money }) {
   return (
-    <motion.article className={`item card ${qty ? 'in-cart' : ''} ${it.available === false ? 'is-soldout' : ''}`}
+    <motion.article whileTap={{ scale: 0.985 }} className={`item card ${qty ? 'in-cart' : ''} ${it.available === false ? 'is-soldout' : ''}`}
       initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }}
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
       whileHover={{ y: -3 }} transition={T.soft}>
@@ -565,7 +584,7 @@ function QtyControl({ id, name, qty, change, color }) {
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       {qty === 0 ? (
-        <motion.button key="add" className="add" onClick={() => change(id, 1)} aria-label={`Add ${name}`}
+        <motion.button key="add" className="add" onClick={(e) => change(id, 1, e.currentTarget)} aria-label={`Add ${name}`}
           initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.7, opacity: 0 }}
           whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.04 }} transition={T.spring}>
           ADD <Plus size={16} aria-hidden="true" />
@@ -581,7 +600,7 @@ function QtyControl({ id, name, qty, change, color }) {
                 initial="in" animate={{ y: 0, opacity: 1 }} exit="out" transition={T.spring}>{qty}</motion.span>
             </AnimatePresence>
           </span>
-          <motion.button whileTap={{ scale: 0.85 }} onClick={() => change(id, 1)} aria-label={`Add one more ${name}`}><Plus size={18} aria-hidden="true" /></motion.button>
+          <motion.button whileTap={{ scale: 0.85 }} onClick={(e) => change(id, 1, e.currentTarget)} aria-label={`Add one more ${name}`}><Plus size={18} aria-hidden="true" /></motion.button>
         </motion.div>
       )}
     </AnimatePresence>
@@ -781,38 +800,34 @@ function NotifyCard({ o }) {
 
 /* ---------------- UPI payment ---------------- */
 function PayCard({ o, money }) {
-  const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const upiId = new URLSearchParams(o.upi.split('?')[1]).get('pa');
   const copy = async () => {
-    try { await navigator.clipboard.writeText(upiId); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(upiId); setCopied(true); buzz(); setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ }
   };
   return (
     <AnimatePresence mode="wait" initial={false}>
       {o.paid ? (
-        <motion.div key="paid" className="paycard paid" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={T.bouncy}>
-          <CircleCheck size={22} aria-hidden="true" /><b>Payment received{o.payMethod === 'cash' ? ' (cash)' : o.payMethod === 'upi' ? ' (UPI)' : ''} — thank you!</b>
+        <motion.div key="paid" className="paycard paid" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={T.bouncy}>
+          <motion.span initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ ...T.bouncy, delay: 0.1 }}><CircleCheck size={26} aria-hidden="true" /></motion.span>
+          <span><b>Payment confirmed{o.payMethod === 'cash' ? ' (cash)' : o.payMethod === 'upi' ? ' (UPI)' : ''}</b><small>The Hawres workers have received your {money(o.total)}. Thank you!</small></span>
         </motion.div>
       ) : (
         <motion.div key="unpaid" className="paycard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.soft}>
-          <div className="payhead"><Wallet size={20} aria-hidden="true" /><b>Pay {money(o.total)}</b><span className="pill st-new">Unpaid</span></div>
-          <p className="muted paysub">Pay now by UPI, or pay at the counter.</p>
-          <motion.a className="btn block" href={o.upi} {...press}>
-            <Smartphone size={20} aria-hidden="true" />Pay {money(o.total)} with UPI app
+          <div className="payhead"><Wallet size={20} aria-hidden="true" /><b>Pay {money(o.total)}</b><span className="pill st-new">Not confirmed</span></div>
+          <motion.div className="payqr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ ...T.spring, delay: 0.15 }}>
+            <img src={`/api/orders/${o.id}/upi.svg`} alt={`UPI QR code to pay ${money(o.total)} to Hawres`} width="220" height="220" />
+            <span className="qrcap">Scan with any UPI app · amount is filled in</span>
+          </motion.div>
+          <motion.a className="btn block" href={o.upi} onClick={() => buzz()} {...press}>
+            <Smartphone size={20} aria-hidden="true" />Or pay {money(o.total)} in a UPI app on this phone
           </motion.a>
-          <p className="apps">GPay · PhonePe · Paytm · BHIM · any UPI app</p>
-          <div className="payrow">
-            <button className="linkbtn" onClick={() => setShowQr(!showQr)} aria-expanded={showQr}><QrCode size={16} aria-hidden="true" />{showQr ? 'Hide QR' : 'Show QR to scan'}</button>
-            <button className="linkbtn" onClick={copy}><Copy size={16} aria-hidden="true" />{copied ? 'Copied!' : upiId}</button>
+          <p className="apps">GPay · PhonePe · Paytm · BHIM · or pay cash at the counter</p>
+          <button className="linkbtn upicopy" onClick={copy}><Copy size={16} aria-hidden="true" />{copied ? 'UPI ID copied!' : `UPI ID: ${upiId}`}</button>
+          <div className="showworkers">
+            <motion.span className="sw-ic" animate={{ y: [0, -4, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}><Smartphone size={22} aria-hidden="true" /></motion.span>
+            <span><b>After paying, show this screen to the Hawres stall workers.</b> They'll confirm your payment and this card turns green.</span>
           </div>
-          <AnimatePresence initial={false}>
-            {showQr && (
-              <motion.div className="payqr" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={T.spring}>
-                <img src={`/api/orders/${o.id}/upi.svg`} alt={`UPI QR code to pay ${money(o.total)}`} width="200" height="200" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <p className="muted paynote">After paying, show this screen at the counter — it turns green once we confirm.</p>
         </motion.div>
       )}
     </AnimatePresence>

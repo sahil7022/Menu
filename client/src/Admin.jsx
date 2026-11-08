@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useAnimate } from 'framer-motion';
 import {
-  Bell, BellOff, Check, ChefHat, CircleCheck, Clock, Download, Lock, LogOut,
+  Bell, BellOff, Camera, Check, ChefHat, CircleCheck, Clock, Download, ImagePlus, Lock, LogOut, MoreHorizontal, LayoutList, Soup,
   Banknote, BadgeIndianRupee, BellRing, HandPlatter, Smartphone, NotebookPen, Pencil, PiggyBank, Plus, RotateCw, TrendingDown, TrendingUp, TriangleAlert, QrCode, ReceiptText, RotateCcw, Search, Trash2, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
 import { AnimatedNumber, NINE, T, fetchJSON, makeMoney, press } from './ui.jsx';
 import ChatoreLogo from './ChatoreLogo.jsx';
 import { enablePush, pushState, useLive } from './live.js';
+import { buzz, shrinkPhoto } from './media.js';
 import './admin.css';
 
 const money = makeMoney('₹');
@@ -39,6 +40,12 @@ export default function Admin() {
   const [expenses, setExpenses] = useState([]);
   const [resetOpen, setResetOpen] = useState(null);   // null | { orders, expenses } = what's ticked when the dialog opens
   const [notice, setNotice] = useState('');
+  const [tab, setTab] = useState(() => sessionStorage.getItem('hawres_tab') || 'orders');   // orders | menu | money
+  const [tabDir, setTabDir] = useState(1);
+  const [more, setMore] = useState(false);
+  const TABS = ['orders', 'menu', 'money'];
+  const goTab = (t) => { if (t === tab) return; buzz(); setTabDir(TABS.indexOf(t) > TABS.indexOf(tab) ? 1 : -1); setTab(t); sessionStorage.setItem('hawres_tab', t); scrollTo({ top: 0 }); };
+  const flash = (m) => { setNotice(m); setTimeout(() => setNotice(''), 3500); };
   const seen = useRef(null);
   const soundRef = useRef(sound); soundRef.current = sound;
 
@@ -72,11 +79,14 @@ export default function Admin() {
   useEffect(() => { if (pin && !authed && sessionStorage.getItem('navrang_pin')) load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useLive(load, 3000, authed);   // instant updates (plus a 3-second safety refresh)
 
-  const [payAsk, setPayAsk] = useState(null);   // order waiting for "how did they pay?" before hand-over
+  const [payAsk, setPayAsk] = useState(null);   // { o, mode: 'handover' | 'confirm' } — "how did they pay?"
+
 
   // paid by cash (offline, at the counter) or UPI; paid=false to undo
   async function setPaid(o, paid, method) {
     if (!paid && !confirm(`Mark order #${o.no} as NOT paid?`)) return;
+    setPayAsk(null); buzz(paid ? [10, 40, 10] : 8);
+    if (paid) flash(`Payment confirmed for #${o.no} — customer notified ✓`);
     setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, paid, payMethod: paid ? method : null } : x))); // optimistic
     await api('/api/admin/orders/' + o.id, { method: 'PATCH', body: JSON.stringify({ paid, method }) }).catch(() => {});
     load();
@@ -92,7 +102,8 @@ export default function Admin() {
   }
 
   async function setStatus(o, status) {
-    if (status === 'done' && !o.paid) { setPayAsk(o); return; }   // ask how they paid first
+    if (status === 'done' && !o.paid) { setPayAsk({ o, mode: 'handover' }); return; }   // ask how they paid first
+    buzz();
     if (status === 'cancelled' && !confirm(`Cancel order #${o.no}?`)) return;
     setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; });
     setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status } : x))); // optimistic
@@ -125,99 +136,135 @@ export default function Admin() {
   };
 
   const stats = [
-    ['Orders', <AnimatedNumber key="o" value={live.length} />, ReceiptText, 'var(--purple)', 'var(--purple-ink)'],
-    ['New', <AnimatedNumber key="n" value={counts.new} />, Bell, 'var(--orange)', 'var(--orange-ink)'],
-    ['Preparing', <AnimatedNumber key="p" value={counts.preparing} />, ChefHat, 'var(--royal)', 'var(--royal-ink)'],
-    ['Ready', <AnimatedNumber key="d" value={counts.ready} />, CircleCheck, 'var(--peacock)', 'var(--peacock-ink)'],
+    ['New', counts.new, Bell, 'var(--orange)', 'var(--orange-ink)'],
+    ['Preparing', counts.preparing, ChefHat, 'var(--royal)', 'var(--royal-ink)'],
+    ['Ready', counts.ready, CircleCheck, 'var(--peacock)', 'var(--peacock-ink)'],
+    ['Unpaid', live.filter((o) => !o.paid).length, BadgeIndianRupee, 'var(--pink)', 'var(--pink-ink)'],
   ];
+  const slide = {
+    initial: (d) => ({ opacity: 0, x: d * 60 }), animate: { opacity: 1, x: 0, transition: T.soft },
+    exit: (d) => ({ opacity: 0, x: d * -60, transition: { duration: 0.16 } }),
+  };
 
   return (
     <>
       <div className="toran" aria-hidden="true" />
-      <div className="awrap">
-        <header className="top">
-          <h1><ChatoreLogo size={52} title="Hawres" />Hawres · Orders
-            <span className="live"><motion.i animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />Live</span>
-          </h1>
-          <div className="tools">
-            <motion.button className="btn small ghost" onClick={() => { setSound(!sound); if (!sound) beep(); }} aria-pressed={sound} {...press}>
-              {sound ? <Bell size={18} aria-hidden="true" /> : <BellOff size={18} aria-hidden="true" />}{sound ? 'Sound on' : 'Sound off'}
-            </motion.button>
-            <AlertsButton pin={pin} />
-            <motion.button className="btn small danger" onClick={() => setResetOpen({ orders: true, expenses: false })} {...press}>
-              <RotateCw size={18} aria-hidden="true" />Reset
-            </motion.button>
-            <motion.a className="btn small ghost" href="/qr" target="_blank" rel="noopener" {...press}><QrCode size={18} aria-hidden="true" />QR poster</motion.a>
-            <motion.button className="btn small ghost" onClick={exportCsv} {...press}><Download size={18} aria-hidden="true" />Export CSV</motion.button>
-            <motion.button className="btn small ghost" aria-label="Log out" {...press}
-              onClick={() => { sessionStorage.removeItem('navrang_pin'); setPin(''); setAuthed(false); }}><LogOut size={18} aria-hidden="true" /></motion.button>
-          </div>
-        </header>
+      <header className="atop">
+        <span className="abrand"><ChatoreLogo size={40} title="Hawres" /><span><b>Hawres</b><small>Poonam's Workers</small></span></span>
+        <span className="live"><motion.i animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />Live</span>
+        <motion.button className="iconbtn morebtn" onClick={() => { buzz(); setMore(true); }} aria-label="More options" {...press}><MoreHorizontal size={22} aria-hidden="true" /></motion.button>
+      </header>
 
-        <MoneyPanel live={live} expenses={expenses} api={api} setExpenses={setExpenses} onReset={() => setResetOpen({ orders: true, expenses: true })} />
-        <MenuEditor api={api} />
-
-        <motion.div className="stats" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.06 } } }}>
-          {stats.map(([l, v, I, c, ci]) => (
-            <motion.div key={l} className="stat card" style={{ '--c': c, '--ci': ci }}
-              variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: T.soft } }} whileHover={{ y: -3 }}>
-              <span className="sic"><I size={24} aria-hidden="true" /></span>
-              <div><div className="v">{v}</div><div className="l">{l}</div></div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <div className="filters">
-          <div className="seg" role="tablist" aria-label="Filter orders">
-            {FILTERS.map(([f, label]) => (
-              <button key={f} role="tab" aria-selected={filter === f} className={`chip ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
-                {filter === f && <motion.span layoutId="segpill" className="segpill" transition={T.spring} />}
-                <span className="chip-in">{label}{f !== 'all' && <b>{counts[f]}</b>}</span>
-              </button>
-            ))}
-          </div>
-          <div className="field">
-            <Search size={20} aria-hidden="true" />
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or #number" aria-label="Search orders" />
-          </div>
-        </div>
-
-        <motion.div layout className="grid" aria-live="polite">
-          <AnimatePresence mode="popLayout">
-            {list.map((o) => (
-              <OrderCard key={o.id} o={o} fresh={fresh.has(o.id)} onStatus={setStatus} onPaid={setPaid}
-                onSeen={() => setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; })} />
-            ))}
-            {!list.length && (
-              <motion.div key="empty" className="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                <UtensilsCrossed size={40} aria-hidden="true" /><p><b>No orders here yet</b><br />New orders pop up automatically.</p>
+      <main className="awrap">
+        <AnimatePresence mode="wait" custom={tabDir} initial={false}>
+          {tab === 'orders' && (
+            <motion.section key="orders" custom={tabDir} variants={slide} initial="initial" animate="animate" exit="exit">
+              <div className="stats">
+                {stats.map(([l, v, I, c, ci]) => (
+                  <motion.div key={l} className="stat card" style={{ '--c': c, '--ci': ci }} whileTap={{ scale: 0.96 }}>
+                    <span className="sic"><I size={20} aria-hidden="true" /></span>
+                    <div><div className="v"><AnimatedNumber value={v} /></div><div className="l">{l}</div></div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="filters">
+                <div className="seg" role="tablist" aria-label="Filter orders">
+                  {FILTERS.map(([f, label]) => (
+                    <button key={f} role="tab" aria-selected={filter === f} className={`chip ${filter === f ? 'on' : ''}`} onClick={() => { buzz(); setFilter(f); }}>
+                      {filter === f && <motion.span layoutId="segpill" className="segpill" transition={T.spring} />}
+                      <span className="chip-in">{label}{f !== 'all' && <b>{counts[f]}</b>}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="field">
+                  <Search size={20} aria-hidden="true" />
+                  <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or #number" aria-label="Search orders" />
+                </div>
+              </div>
+              <motion.div layout className="grid" aria-live="polite">
+                <AnimatePresence mode="popLayout">
+                  {list.map((o) => (
+                    <OrderCard key={o.id} o={o} fresh={fresh.has(o.id)} onStatus={setStatus} onPaid={setPaid}
+                      onConfirmPay={() => { buzz(); setPayAsk({ o, mode: 'confirm' }); }}
+                      onSeen={() => setFresh((f) => { const n = new Set(f); n.delete(o.id); return n; })} />
+                  ))}
+                  {!list.length && (
+                    <motion.div key="empty" className="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+                      <UtensilsCrossed size={40} aria-hidden="true" /><p><b>No orders here yet</b><br />New orders pop up automatically.</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              <Summary live={live} />
+            </motion.section>
+          )}
+          {tab === 'menu' && (
+            <motion.section key="menu" custom={tabDir} variants={slide} initial="initial" animate="animate" exit="exit">
+              <MenuEditor api={api} flash={flash} />
+            </motion.section>
+          )}
+          {tab === 'money' && (
+            <motion.section key="money" custom={tabDir} variants={slide} initial="initial" animate="animate" exit="exit">
+              <MoneyPanel live={live} expenses={expenses} api={api} setExpenses={setExpenses} onReset={() => setResetOpen({ orders: true, expenses: true })} />
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </main>
 
-        <Summary live={live} />
-        <p style={{ textAlign: 'right', marginTop: 20 }}>
-          <motion.button className="btn small danger" onClick={() => setResetOpen({ orders: true, expenses: false })} {...press}>
-            <RotateCw size={18} aria-hidden="true" />Reset database
-          </motion.button>
-        </p>
-      </div>
+      {/* bottom tab bar (phone-first) */}
+      <nav className="tabbar" aria-label="Sections">
+        {[['orders', 'Orders', LayoutList, counts.new], ['menu', 'Menu', Soup, 0], ['money', 'Money', Wallet, 0]].map(([t, label, I, badge]) => (
+          <button key={t} className={`tabbtn ${tab === t ? 'on' : ''}`} onClick={() => goTab(t)} aria-current={tab === t ? 'page' : undefined}>
+            {tab === t && <motion.span layoutId="tabglow" className="tabglow" transition={T.spring} />}
+            <motion.span className="tabicon" animate={tab === t ? { y: -2, scale: 1.12 } : { y: 0, scale: 1 }} transition={T.spring}>
+              <I size={22} aria-hidden="true" />
+              <AnimatePresence>{badge > 0 && <motion.b key={badge} className="tabbadge" initial={{ scale: 1.8 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={T.bouncy}>{badge}</motion.b>}</AnimatePresence>
+            </motion.span>
+            <span className="tablabel">{label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* "More" sheet */}
       <AnimatePresence>
-        {payAsk && <PayAsk key="payask" o={payAsk} onPick={(m) => handOver(payAsk, m)} onClose={() => setPayAsk(null)} />}
+        {more && (
+          <>
+            <motion.div key="mbg" className="modal-bg" onClick={() => setMore(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.div key="msheet" className="moresheet" role="dialog" aria-modal="true" aria-label="More options"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%', transition: { duration: 0.2 } }} transition={T.sheet}
+              drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.5 }} onDragEnd={(_, i) => { if (i.offset.y > 80) setMore(false); }}>
+              <div className="grab"><div className="handle" /></div>
+              <div className="morelist">
+                <motion.button className="moreitem" onClick={() => { setSound(!sound); if (!sound) beep(); buzz(); }} whileTap={{ scale: 0.97 }}>
+                  {sound ? <Bell size={22} aria-hidden="true" /> : <BellOff size={22} aria-hidden="true" />}<span><b>{sound ? 'Sound on' : 'Sound off'}</b><small>Beep on this screen for new orders</small></span>
+                </motion.button>
+                <div className="moreitem plain"><BellRing size={22} aria-hidden="true" /><span><b>Phone alerts</b><small>Ring this phone for every new order</small></span><AlertsButton pin={pin} compact /></div>
+                <motion.a className="moreitem" href="/qr" target="_blank" rel="noopener" whileTap={{ scale: 0.97 }}><QrCode size={22} aria-hidden="true" /><span><b>QR poster</b><small>Open the printable poster</small></span></motion.a>
+                <motion.button className="moreitem" onClick={() => { exportCsv(); setMore(false); }} whileTap={{ scale: 0.97 }}><Download size={22} aria-hidden="true" /><span><b>Export CSV</b><small>Download all orders</small></span></motion.button>
+                <motion.button className="moreitem danger" onClick={() => { setMore(false); setResetOpen({ orders: true, expenses: false }); }} whileTap={{ scale: 0.97 }}><RotateCw size={22} aria-hidden="true" /><span><b>Reset database</b><small>Clear orders and/or investment</small></span></motion.button>
+                <motion.button className="moreitem" onClick={() => { sessionStorage.removeItem('navrang_pin'); setPin(''); setAuthed(false); setMore(false); }} whileTap={{ scale: 0.97 }}><LogOut size={22} aria-hidden="true" /><span><b>Log out</b></span></motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {payAsk && <PayAsk key="payask" o={payAsk.o} mode={payAsk.mode}
+          onPick={(m) => (payAsk.mode === 'handover' ? handOver(payAsk.o, m) : setPaid(payAsk.o, true, m))} onClose={() => setPayAsk(null)} />}
       </AnimatePresence>
       <AnimatePresence>
         {resetOpen && <ResetDialog key="reset" preset={resetOpen} api={api} onClose={() => setResetOpen(null)}
-          onDone={(what) => { setResetOpen(null); seen.current = null; setFresh(new Set()); load(); setNotice(`Reset done — ${what} cleared ✓`); setTimeout(() => setNotice(''), 4000); }} />}
+          onDone={(what) => { setResetOpen(null); seen.current = null; setFresh(new Set()); load(); flash(`Reset done — ${what} cleared ✓`); }} />}
       </AnimatePresence>
       <AnimatePresence>
-        {notice && <motion.div className="toast" role="status" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><Check size={16} aria-hidden="true" />{notice}</motion.div>}
+        {notice && <motion.div key={notice} className="toast atoast" role="status" initial={{ opacity: 0, y: 16, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={T.spring}><Check size={16} aria-hidden="true" />{notice}</motion.div>}
       </AnimatePresence>
     </>
   );
 }
 
-function OrderCard({ o, fresh, onStatus, onPaid, onSeen }) {
+function OrderCard({ o, fresh, onStatus, onPaid, onConfirmPay, onSeen }) {
   const nx = NEXT[o.status];
   return (
     <motion.article layout className={`order card st-${o.status} ${fresh ? 'fresh' : ''}`} onClick={fresh ? onSeen : undefined}
@@ -241,18 +288,15 @@ function OrderCard({ o, fresh, onStatus, onPaid, onSeen }) {
               initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={T.bouncy} whileTap={{ scale: 0.9 }}>
               <Check size={14} aria-hidden="true" />Paid · {o.payMethod === 'cash' ? 'Cash' : 'UPI'}
             </motion.button>
-          ) : o.status !== 'cancelled' && (
-            <span className="paypick">
-              <span className="unpaid">Unpaid</span>
-              <motion.button className="paybtn" onClick={() => onPaid(o, true, 'cash')} aria-label={`Order ${o.no}: cash received`} whileTap={{ scale: 0.9 }}><Banknote size={15} aria-hidden="true" />Cash</motion.button>
-              <motion.button className="paybtn" onClick={() => onPaid(o, true, 'upi')} aria-label={`Order ${o.no}: UPI received`} whileTap={{ scale: 0.9 }}><Smartphone size={15} aria-hidden="true" />UPI</motion.button>
-            </span>
-          )}
+          ) : o.status !== 'cancelled' && <span className="unpaid">Unpaid</span>}
         </span>
         <span className="time"><Clock size={14} aria-hidden="true" />{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
       <div className="acts">
         {nx && (() => { const I = nx[2]; return <motion.button className="btn small" onClick={() => onStatus(o, nx[0])} {...press}><I size={18} aria-hidden="true" />{nx[1]}</motion.button>; })()}
+        {!o.paid && o.status !== 'cancelled' && (
+          <motion.button className="btn small paystep" onClick={onConfirmPay} {...press}><Wallet size={18} aria-hidden="true" />Confirm payment</motion.button>
+        )}
         {['new', 'preparing'].includes(o.status) && (
           <motion.button className="btn small ghost" onClick={() => onStatus(o, 'cancelled')} aria-label={`Cancel order ${o.no}`} {...press}><X size={18} aria-hidden="true" /></motion.button>
         )}
@@ -388,7 +432,7 @@ function MoneyPanel({ live, expenses, api, setExpenses, onReset }) {
 }
 
 /* ---------------- Phone alerts for new orders ---------------- */
-function AlertsButton({ pin }) {
+function AlertsButton({ pin, compact = false }) {
   const [state, setState] = useState(() => (pushState() === 'ok' && localStorage.getItem('chatore_worker_push') ? 'on' : 'off'));
   const [msg, setMsg] = useState('');
   const say = (m, ms = 7000) => { setMsg(m); setTimeout(() => setMsg(''), ms); };
@@ -410,7 +454,7 @@ function AlertsButton({ pin }) {
     <span style={{ position: 'relative' }}>
       <motion.button className={`btn small ${state === 'on' ? '' : 'ghost'}`} onClick={turnOn} disabled={state === 'busy'} {...press}
         title="Get a phone notification for every new order">
-        <BellRing size={18} aria-hidden="true" />{state === 'on' ? 'Send test alert' : state === 'busy' ? 'Turning on…' : 'Phone alerts'}
+        <BellRing size={18} aria-hidden="true" />{state === 'on' ? (compact ? 'Test' : 'Send test alert') : state === 'busy' ? '…' : (compact ? 'Turn on' : 'Phone alerts')}
       </motion.button>
       <AnimatePresence>{msg && <motion.span className="tipmsg" role="status" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{msg}</motion.span>}</AnimatePresence>
     </span>
@@ -462,7 +506,7 @@ function ResetDialog({ preset, api, onClose, onDone }) {
 /* ---------------- Menu editor (Poonam's Workers can add / edit dishes) ---------------- */
 const BLANK = { id: '', name: '', price: '', category: '', desc: '', veg: true, popular: false, available: true };
 
-function MenuEditor({ api }) {
+function MenuEditor({ api, flash = () => {} }) {
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null);   // item being added/edited
   const [open, setOpen] = useState(true);
@@ -475,6 +519,22 @@ function MenuEditor({ api }) {
     setCats((cs) => cs.map((c) => ({ ...c, items: c.items.map((x) => (x.id === it.id ? { ...x, available: !x.available } : x)) })));
     const r = await api('/api/admin/menu', { method: 'POST', body: JSON.stringify({ ...it, category: cat, available: !it.available }) }).catch(() => null);
     if (r) setCats(r);
+  }
+  const [uploading, setUploading] = useState(null);   // item id being uploaded
+  async function uploadPhoto(it, file) {
+    if (!file) return;
+    setUploading(it.id);
+    try {
+      const ph = await shrinkPhoto(file);
+      const r = await api(`/api/admin/menu/${it.id}/image`, { method: 'POST', body: JSON.stringify({ mime: ph.mime, data: ph.data }) });
+      setCats(r); buzz([10, 40, 10]); flash(`Photo added to ${it.name} (${ph.kb} KB) ✓`);
+    } catch (e) { flash(`Photo not saved: ${e.message}`); }
+    setUploading(null);
+  }
+  async function removePhoto(it) {
+    if (!confirm(`Remove the photo of ${it.name}?`)) return;
+    const r = await api(`/api/admin/menu/${it.id}/image`, { method: 'DELETE' }).catch(() => null);
+    if (r) { setCats(r); flash('Photo removed'); }
   }
   async function remove(it) {
     if (!confirm(`Delete "${it.name}" from the menu?`)) return;
@@ -497,7 +557,13 @@ function MenuEditor({ api }) {
                 <AnimatePresence initial={false}>
                   {c.items.map((it) => (
                     <motion.div key={it.id} layout className={`mrow ${it.available ? '' : 'off'}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                      <span className="mname"><b>{it.name}</b>{it.popular && <em> · Popular</em>}{it.desc && <small>{it.desc}</small>}</span>
+                      <label className={`mthumb ${uploading === it.id ? 'busy' : ''}`} aria-label={it.image ? `Change photo of ${it.name}` : `Add photo of ${it.name}`}>
+                        {it.image ? <img src={it.image} alt="" /> : <ImagePlus size={22} aria-hidden="true" />}
+                        {uploading === it.id ? <span className="spinner" /> : <span className="mcam"><Camera size={12} aria-hidden="true" /></span>}
+                        <input type="file" accept="image/*" hidden onChange={(e) => { uploadPhoto(it, e.target.files[0]); e.target.value = ''; }} />
+                      </label>
+                      <span className="mname"><b>{it.name}</b>{it.popular && <em> · Popular</em>}{it.desc && <small>{it.desc}</small>}
+                        {it.image && <button className="linkbtn rmphoto" onClick={() => removePhoto(it)}>Remove photo</button>}</span>
                       <span className="mprice">{money(it.price)}</span>
                       <button className={`avail ${it.available ? 'on' : ''}`} onClick={() => toggle(it, c.name)} role="switch" aria-checked={it.available}
                         aria-label={`${it.name} ${it.available ? 'available' : 'sold out'}`}>{it.available ? 'Available' : 'Sold out'}</button>
@@ -509,11 +575,13 @@ function MenuEditor({ api }) {
               </div>
             ))}
             {!cats.length && <p className="muted">No dishes yet — tap “Add dish”.</p>}
+            {cats.length > 0 && <p className="muted phototip"><Camera size={14} aria-hidden="true" /> Tap a dish's picture square to take or choose a photo.</p>}
           </motion.div>
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {editing && <ItemDialog key="ed" item={editing} cats={cats.map((c) => c.name)} api={api} onClose={() => setEditing(null)} onSaved={(r) => { setCats(r); setEditing(null); }} />}
+        {editing && <ItemDialog key="ed" item={editing} cats={cats.map((c) => c.name)} api={api} onClose={() => setEditing(null)}
+          onSaved={(r) => { setCats(r); setEditing(null); flash('Dish saved ✓'); }} />}
       </AnimatePresence>
     </section>
   );
@@ -523,6 +591,7 @@ function ItemDialog({ item, cats, api, onClose, onSaved }) {
   const [f, setF] = useState({ ...item, price: String(item.price ?? '') });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState(null);   // { mime, data, preview, kb } picked in this dialog
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   useEffect(() => { const k = (e) => e.key === 'Escape' && onClose(); addEventListener('keydown', k); return () => removeEventListener('keydown', k); }, [onClose]);
   async function save(e) {
@@ -530,7 +599,16 @@ function ItemDialog({ item, cats, api, onClose, onSaved }) {
     if (!f.name.trim()) return setErr('Enter the dish name');
     if (!(Number(f.price) >= 0) || f.price === '') return setErr('Enter the price');
     setBusy(true);
-    try { onSaved(await api('/api/admin/menu', { method: 'POST', body: JSON.stringify({ ...f, price: Math.round(Number(f.price)), category: f.category.trim() || 'Menu' }) })); }
+    try {
+      const category = f.category.trim() || 'Menu';
+      let r = await api('/api/admin/menu', { method: 'POST', body: JSON.stringify({ ...f, price: Math.round(Number(f.price)), category }) });
+      if (photo) {
+        // a new dish gets its id from the server: find it by name in that category
+        const id = item.id || r.find((c) => c.name === category)?.items.filter((x) => x.name === f.name.trim()).pop()?.id;
+        if (id) r = await api(`/api/admin/menu/${id}/image`, { method: 'POST', body: JSON.stringify({ mime: photo.mime, data: photo.data }) });
+      }
+      onSaved(r);
+    }
     catch (e2) { setErr(e2.message || 'Could not save'); setBusy(false); }
   }
   return (
@@ -540,8 +618,16 @@ function ItemDialog({ item, cats, api, onClose, onSaved }) {
         <motion.form className="modal card" onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="itemTitle"
           initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.spring}>
           <h3 id="itemTitle" style={{ color: 'var(--gold)' }}>{item.id ? 'Edit dish' : 'Add a dish'}</h3>
+          <label className="photopick">
+            {photo?.preview || item.image ? <img src={photo?.preview || item.image} alt="Dish photo" /> : <span className="ph-empty"><Camera size={28} aria-hidden="true" />Add a photo</span>}
+            <span className="ph-btn"><Camera size={16} aria-hidden="true" />{photo || item.image ? 'Change photo' : 'Take / choose photo'}</span>
+            <input type="file" accept="image/*" hidden onChange={async (e) => {
+              const file = e.target.files[0]; e.target.value = ''; setErr('');
+              try { setPhoto(await shrinkPhoto(file)); buzz(); } catch (e2) { setErr(e2.message); }
+            }} />
+          </label>
           <label className="label" htmlFor="itName">Name</label>
-          <input id="itName" value={f.name} onChange={set('name')} maxLength={60} placeholder="e.g. Veg Fried Rice" autoFocus />
+          <input id="itName" value={f.name} onChange={set('name')} maxLength={60} placeholder="e.g. Veg Fried Rice" />
           <div className="two">
             <span><label className="label" htmlFor="itPrice">Price (₹)</label>
               <input id="itPrice" value={f.price} onChange={(e) => setF({ ...f, price: e.target.value.replace(/[^0-9]/g, '') })} inputMode="numeric" placeholder="60" /></span>
@@ -566,7 +652,7 @@ function ItemDialog({ item, cats, api, onClose, onSaved }) {
 }
 
 /* ---------------- "How did they pay?" before handing over ---------------- */
-function PayAsk({ o, onPick, onClose }) {
+function PayAsk({ o, mode = 'handover', onPick, onClose }) {
   useEffect(() => { const k = (e) => e.key === 'Escape' && onClose(); addEventListener('keydown', k); return () => removeEventListener('keydown', k); }, [onClose]);
   return (
     <>
@@ -574,13 +660,13 @@ function PayAsk({ o, onPick, onClose }) {
       <div className="modal-wrap">
         <motion.div className="modal card payask" role="dialog" aria-modal="true" aria-labelledby="payAskTitle"
           initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={T.spring}>
-          <h3 id="payAskTitle" style={{ color: 'var(--gold)' }}>Hand over #{o.no}</h3>
-          <p className="muted">How did <b>{o.name}</b> pay <b style={{ color: 'var(--gold)' }}>{money(o.total)}</b>?</p>
+          <h3 id="payAskTitle" style={{ color: 'var(--gold)' }}>{mode === 'confirm' ? `Confirm payment #${o.no}` : `Hand over #${o.no}`}</h3>
+          <p className="muted">How did <b>{o.name}</b> pay <b style={{ color: 'var(--gold)' }}>{money(o.total)}</b>?{mode === 'confirm' && ' The customer gets a “Payment confirmed” message.'}</p>
           <div className="paychoices">
             <motion.button className="btn" onClick={() => onPick('cash')} {...press}><Banknote size={20} aria-hidden="true" />Cash</motion.button>
             <motion.button className="btn" onClick={() => onPick('upi')} {...press}><Smartphone size={20} aria-hidden="true" />UPI</motion.button>
           </div>
-          <motion.button className="btn small ghost block" onClick={() => onPick(null)} {...press}>Not paid yet — hand over anyway</motion.button>
+          {mode === 'handover' && <motion.button className="btn small ghost block" onClick={() => onPick(null)} {...press}>Not paid yet — hand over anyway</motion.button>}
           <button className="linkbtn" onClick={onClose} style={{ width: '100%' }}>Cancel</button>
         </motion.div>
       </div>
