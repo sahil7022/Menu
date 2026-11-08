@@ -224,3 +224,24 @@ section.cat h2::after { content: ""; flex: 1; height: 3px; border-radius: 2px; b
 .themefloat { position: absolute; top: 22px; left: 12px; z-index: 15; }
 .hero.compact { padding-left: 64px; }
 .themefloat.low { top: 86px; left: 14px; }   /* welcome screen: sit under the left bell */
+
+/* ---- poster dancers as the header backdrop (replaces the big image block) ---- */
+.hero:not(.compact) { padding-bottom: 26px; }
+.hero > :is(.presents, .hero-title, .tagline, .ribbon, .event-info) { position: relative; z-index: 1; }
+.hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.hero-bg img { position: absolute; inset: -5%; width: 110%; height: 110%; object-fit: cover; object-position: center 38%;
+  opacity: .6; will-change: transform; animation: kenburns 28s ease-in-out infinite alternate; }
+@keyframes kenburns { from { transform: scale(1) translate3d(0, 0, 0); } to { transform: scale(1.1) translate3d(-2%, -1.5%, 0); } }
+/* the photo fades to transparent at top and bottom (no seam with the page glow),
+   plus a calm pool behind the logo + title so the text stays crisp */
+.hero-bg { -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 70%, transparent 100%);
+           mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 70%, transparent 100%); }
+.hero-bg::after { content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 62% 40% at 50% 50%, color-mix(in srgb, var(--bg) 58%, transparent), transparent 78%),
+    color-mix(in srgb, var(--bg) 22%, transparent); }
+:root[data-theme="light"] .hero-bg img { opacity: .3; }
+:root[data-theme="light"] .hero-bg::after {
+  background:
+    radial-gradient(ellipse 62% 42% at 50% 50%, color-mix(in srgb, var(--bg) 75%, transparent), transparent 80%),
+    color-mix(in srgb, var(--bg) 38%, transparent); }

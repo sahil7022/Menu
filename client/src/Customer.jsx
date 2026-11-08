@@ -4,7 +4,7 @@ import {
   ArrowRight, Bell, BellRing, Check, ChefHat, CircleCheck, Clock, Flame, Minus, NotebookPen, Plus, ReceiptText,
   Copy, MapPin, QrCode, Search, ShoppingBag, Smartphone, Sparkles, User, UtensilsCrossed, Wallet, X,
 } from 'lucide-react';
-import { AnimatedNumber, CategoryIcon, Embers, Mandala, NINE, T, TempleBell, ThemeToggle, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
+import { AnimatedNumber, CategoryIcon, Embers, NINE, T, TempleBell, ThemeToggle, fetchJSON, makeMoney, press, useConfetti } from './ui.jsx';
 import StaffGate from './StaffGate.jsx';
 import Splash from './Splash.jsx';
 import { BrandMark } from './ChatoreLogo.jsx';
@@ -367,10 +367,17 @@ function Hero({ menu, compact, onTitle }) {
   const ev = menu?.event;
   return (
     <motion.header layout className={`hero ${compact ? 'compact' : ''}`} transition={T.soft}>
+      <AnimatePresence>
+        {!compact && (
+          // the poster's dancers, as a dim, slowly drifting backdrop behind the title
+          <motion.div key="bg" className="hero-bg" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
+            <img src="/dancers.webp" alt="" width="900" height="639" fetchpriority="high" />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {!compact && <>
         <TempleBell side="left" chain={34} />
         <TempleBell side="right" chain={58} delay={0.8} />
-        <Mandala className="m1" /><Mandala className="m2" reverse />
       </>}
       <AnimatePresence>
         {!compact && ev?.presentedBy && (
@@ -396,13 +403,6 @@ function Hero({ menu, compact, onTitle }) {
           <span>{ev.dates}</span>
         </motion.div>
       )}
-      <AnimatePresence>
-        {!compact && (
-          <motion.div className="hero-art" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.8, ease: [0.2, 0.7, 0.3, 1] }}>
-            <img src="/dancers.webp" alt="Garba dancers with dandiya sticks" width="900" height="639" />
-          </motion.div>
-        )}
-      </AnimatePresence>
       <AnimatePresence>
         {!compact && ev && (
           <motion.div className="event-info" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.4 } }} exit={{ opacity: 0 }}>
