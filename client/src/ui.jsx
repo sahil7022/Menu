@@ -26,7 +26,7 @@ export function CategoryIcon({ name, size = 20 }) {
   const n = name.toLowerCase();
   const I = /^(tea|chai|coffee)\b|hot drink/.test(n) ? Coffee
     : /drink|bev|juice|soda|lassi/.test(n) ? CupSoda
-    : /chinese|noodle|momo|manchurian|soup|maggi/.test(n) ? Soup
+    : /chin|noodle|momo|manchurian|soup|maggi/.test(n) ? Soup
     : /sweet|dessert|mithai/.test(n) ? CakeSlice
     : /chaat|spicy|street/.test(n) ? Flame
     : /snack|starter|farsan/.test(n) ? Cookie : UtensilsCrossed;
