@@ -61,7 +61,7 @@ const sameKey = (a, b) => {
 
 // Ask permission, subscribe this browser, and send the subscription to `endpoint`.
 // Returns the server's answer, e.g. { ok: true, sent: 1 } — `sent` = notifications actually delivered to push services.
-export async function enablePush(endpoint, headers = {}) {
+export async function enablePush(endpoint, headers = {}, extra = {}) {
   const state = pushState();
   if (state === 'unsupported' || state === 'ios-install') throw Object.assign(new Error(state), { code: state });
   // Ask FIRST, straight from the tap: iPhone and Firefox refuse to show the question after any other await.
@@ -74,7 +74,7 @@ export async function enablePush(endpoint, headers = {}) {
   let sub = await reg.pushManager.getSubscription();
   if (sub && !sameKey(sub.options && sub.options.applicationServerKey, key)) { await sub.unsubscribe().catch(() => {}); sub = null; } // old key → re-subscribe
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
-  const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ subscription: sub.toJSON() }) });
+  const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ ...extra, subscription: sub.toJSON() }) });
   const out = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(out.error || 'Could not save'), { code: 'server' });
   return out;

@@ -16,9 +16,17 @@ const NEXT = { new: ['preparing', 'Start preparing', ChefHat], preparing: ['read
 const STATUS_NAME = { new: 'new', preparing: 'preparing', ready: 'ready', done: 'handed over', cancelled: 'cancelled' };
 const FILTERS = [['active', 'Active'], ['new', 'New'], ['preparing', 'Preparing'], ['ready', 'Ready'], ['done', 'Done'], ['all', 'All']];
 
+// One audio context, unlocked by the worker's first tap: phones keep a context made from a timer muted forever.
+let audioCtx;
+const unlockAudio = () => {
+  try { (audioCtx ||= new (window.AudioContext || window.webkitAudioContext)()).resume(); } catch { /* audio not available */ }
+};
+if (typeof window !== 'undefined') ['pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, unlockAudio, { passive: true }));
+
 function beep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    unlockAudio();
+    const ctx = audioCtx;
     [880, 1175, 1568].forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
@@ -70,6 +78,7 @@ export default function Admin() {
       if (n.length) {
         setFresh((f) => new Set([...f, ...n.map((o) => o.id)]));
         if (soundRef.current) beep();
+        buzz([300, 120, 300]);
         document.title = `(${n.length}) New order!`; setTimeout(() => (document.title = 'Hawres · Orders'), 4000);
       }
     }
@@ -81,6 +90,16 @@ export default function Admin() {
 
   useEffect(() => { if (pin && !authed && sessionStorage.getItem('navrang_pin')) load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useLive(load, 3000, authed);   // instant updates (plus a 3-second safety refresh)
+
+  // Phone alerts: the server must hold this phone's subscription. Re-send it silently on every open
+  // (permission already granted → no prompt), so a lost or never-saved subscription heals itself.
+  const [alertsOn, setAlertsOn] = useState(() => pushState() === 'ok' && !!localStorage.getItem('chatore_worker_push'));
+  useEffect(() => {
+    if (!authed || pushState() !== 'ok') return;
+    enablePush('/api/admin/push', { 'X-Admin-Pin': pin }, { silent: true })
+      .then(() => { localStorage.setItem('chatore_worker_push', '1'); setAlertsOn(true); })
+      .catch(() => { localStorage.removeItem('chatore_worker_push'); setAlertsOn(false); });
+  }, [authed, pin]);
 
   const [payAsk, setPayAsk] = useState(null);   // { o, mode: 'handover' | 'confirm' } — "how did they pay?"
 
@@ -163,6 +182,18 @@ export default function Admin() {
         <AnimatePresence mode="wait" custom={tabDir} initial={false}>
           {tab === 'orders' && (
             <motion.section key="orders" custom={tabDir} variants={slide} initial="initial" animate="animate" exit="exit">
+              <AnimatePresence initial={false}>
+                {!alertsOn && (
+                  <motion.div key="alertbar" className="alertbar card" role="note"
+                    initial={{ opacity: 0, y: -12, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, y: -12, height: 0 }} transition={T.soft}>
+                    <motion.span className="alertbell" animate={{ rotate: [0, -14, 12, -8, 0] }} transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 2.2 }}>
+                      <BellRing size={22} aria-hidden="true" />
+                    </motion.span>
+                    <span className="alerttxt"><b>Phone alerts are off</b><small>Turn on so this phone rings for new orders, even with the screen locked.</small></span>
+                    <AlertsButton pin={pin} compact onOn={() => setAlertsOn(true)} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="stats">
                 {stats.map(([l, v, I, c, ci]) => (
                   <motion.div key={l} className="stat card" style={{ '--c': c, '--ci': ci }} whileTap={{ scale: 0.96 }}>
@@ -242,7 +273,7 @@ export default function Admin() {
                 <motion.button className="moreitem" onClick={() => { setSound(!sound); if (!sound) beep(); buzz(); }} whileTap={{ scale: 0.97 }}>
                   {sound ? <Bell size={22} aria-hidden="true" /> : <BellOff size={22} aria-hidden="true" />}<span><b>{sound ? 'Sound on' : 'Sound off'}</b><small>Beep on this screen for new orders</small></span>
                 </motion.button>
-                <div className="moreitem plain"><BellRing size={22} aria-hidden="true" /><span><b>Phone alerts</b><small>Ring this phone for every new order</small></span><AlertsButton pin={pin} compact /></div>
+                <div className="moreitem plain"><BellRing size={22} aria-hidden="true" /><span><b>Phone alerts</b><small>Ring this phone for every new order</small></span><AlertsButton pin={pin} compact onOn={() => setAlertsOn(true)} /></div>
                 <motion.a className="moreitem" href="/qr" target="_blank" rel="noopener" whileTap={{ scale: 0.97 }}><QrCode size={22} aria-hidden="true" /><span><b>QR poster</b><small>Open the printable poster</small></span></motion.a>
                 <motion.button className="moreitem" onClick={() => { exportCsv(); setMore(false); }} whileTap={{ scale: 0.97 }}><Download size={22} aria-hidden="true" /><span><b>Export CSV</b><small>Download all orders</small></span></motion.button>
                 <motion.button className="moreitem danger" onClick={() => { setMore(false); setResetOpen({ orders: true, expenses: false }); }} whileTap={{ scale: 0.97 }}><RotateCw size={22} aria-hidden="true" /><span><b>Reset database</b><small>Clear orders and/or investment</small></span></motion.button>
@@ -436,7 +467,7 @@ function MoneyPanel({ live, expenses, api, setExpenses, onReset }) {
 }
 
 /* ---------------- Phone alerts for new orders ---------------- */
-function AlertsButton({ pin, compact = false }) {
+function AlertsButton({ pin, compact = false, onOn }) {
   const [state, setState] = useState(() => (pushState() === 'ok' && localStorage.getItem('chatore_worker_push') ? 'on' : 'off'));
   const [msg, setMsg] = useState('');
   const say = (m, ms = 7000) => { setMsg(m); setTimeout(() => setMsg(''), ms); };
@@ -445,7 +476,7 @@ function AlertsButton({ pin, compact = false }) {
     setState('busy'); setMsg('');
     try {
       const r = await enablePush('/api/admin/push', { 'X-Admin-Pin': pin });
-      localStorage.setItem('chatore_worker_push', '1'); setState('on');
+      localStorage.setItem('chatore_worker_push', '1'); setState('on'); onOn?.();
       say(r.sent > 0 ? `✓ Test alert sent${wasOn ? ' again' : ''} — your phone should ring now.` : 'Saved, but the test alert could not be delivered. Check the phone has internet and try again.');
     } catch (e) {
       setState(wasOn ? 'on' : 'off');
